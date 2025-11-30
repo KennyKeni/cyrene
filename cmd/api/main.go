@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"cyrene/internal/config"
 	"cyrene/internal/server"
 )
 
@@ -38,6 +39,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
+	config.Load()
 
 	server := server.NewServer()
 

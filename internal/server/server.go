@@ -3,12 +3,9 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
-
+	"cyrene/internal/config"
 	"cyrene/internal/database"
 )
 
@@ -19,11 +16,10 @@ type Server struct {
 }
 
 func NewServer() *http.Server {
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	cfg := config.Get()
 	NewServer := &Server{
-		port: port,
-
-		db: database.New(),
+		port: cfg.Port,
+		db:   database.New(),
 	}
 
 	// Declare Server config
