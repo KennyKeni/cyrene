@@ -1,4 +1,4 @@
-package database
+package postgres
 
 import (
 	"context"
@@ -22,6 +22,9 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// DB returns the underlying database connection for use with go-jet.
+	DB() *sql.DB
 }
 
 type service struct {
@@ -50,6 +53,11 @@ func New() Service {
 		dbName: dbCfg.Database,
 	}
 	return dbInstance
+}
+
+// DB returns the underlying database connection for use with go-jet.
+func (s *service) DB() *sql.DB {
+	return s.db
 }
 
 // Health checks the health of the database connection by pinging the database.

@@ -1,5 +1,8 @@
 # Simple Makefile for a Go project
 
+# Required for encoding/json/v2 (used by Elysia/openai-go)
+export GOEXPERIMENT := jsonv2
+
 # Build the application
 all: build test
 
@@ -11,6 +14,9 @@ build:
 
 # Run the application
 run:
+	@echo "Running...."
+
+
 	@go run cmd/api/main.go
 # Create DB container
 docker-run:

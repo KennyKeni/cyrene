@@ -6,20 +6,20 @@ import (
 	"time"
 
 	"cyrene/internal/config"
-	"cyrene/internal/database"
+	"cyrene/internal/postgres"
 )
 
 type Server struct {
 	port int
 
-	db database.Service
+	db postgres.Service
 }
 
 func NewServer() *http.Server {
 	cfg := config.Get()
 	NewServer := &Server{
 		port: cfg.Port,
-		db:   database.New(),
+		db:   postgres.New(),
 	}
 
 	// Declare Server config
