@@ -2,8 +2,8 @@ package rag
 
 import (
 	"context"
-	"cyrene/internal/config"
-	"cyrene/internal/genkit"
+	"cyrene/internal/platform/config"
+	"cyrene/internal/platform/genkit"
 
 	"github.com/firebase/genkit/go/ai"
 )

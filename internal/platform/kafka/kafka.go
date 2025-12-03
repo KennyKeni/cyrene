@@ -1,43 +1,25 @@
 package kafka
 
 import (
-	"context"
-
-	"cyrene/internal/config"
+	"cyrene/internal/platform/config"
 )
 
-// Producer defines the Kafka producer interface.
+// KafkaProducer wraps the Kafka producer client.
 //
 // To implement:
 // 1. go get github.com/twmb/franz-go/pkg/kgo
 // 2. Create client: kgo.NewClient(kgo.SeedBrokers(brokers...))
-type Producer interface {
-	// Publish sends a message to the specified topic.
-	Publish(ctx context.Context, topic string, key, value []byte) error
-
-	// Close flushes and closes the producer.
-	Close() error
+type KafkaProducer struct {
+	// client *kgo.Client
 }
 
-// Consumer defines the Kafka consumer interface.
+// KafkaConsumer wraps the Kafka consumer client.
 //
 // To implement:
 // 1. go get github.com/twmb/franz-go/pkg/kgo
 // 2. Create client with consumer group: kgo.NewClient(kgo.SeedBrokers(...), kgo.ConsumerGroup(...), kgo.ConsumeTopics(...))
-type Consumer interface {
-	// Subscribe starts consuming messages from the specified topics.
-	// The handler is called for each message received.
-	Subscribe(ctx context.Context, topics []string, handler func(key, value []byte) error) error
-
-	// Close stops the consumer.
-	Close() error
-}
-
-// Message represents a Kafka message.
-type Message struct {
-	Topic string
-	Key   []byte
-	Value []byte
+type KafkaConsumer struct {
+	// client *kgo.Client
 }
 
 // NewProducer creates a new Kafka producer.
@@ -46,24 +28,20 @@ type Message struct {
 //
 //	import "github.com/twmb/franz-go/pkg/kgo"
 //
-//	type producer struct {
-//	    client *kgo.Client
-//	}
-//
-//	func NewProducer(cfg *config.KafkaConfig) (Producer, error) {
+//	func NewProducer(cfg *config.KafkaConfig) (*KafkaProducer, error) {
 //	    brokers := strings.Split(cfg.Brokers, ",")
 //	    client, err := kgo.NewClient(kgo.SeedBrokers(brokers...))
 //	    if err != nil {
 //	        return nil, err
 //	    }
-//	    return &producer{client: client}, nil
+//	    return &KafkaProducer{client: client}, nil
 //	}
 //
-//	func (p *producer) Publish(ctx context.Context, topic string, key, value []byte) error {
+//	func (p *KafkaProducer) Publish(ctx context.Context, topic string, key, value []byte) error {
 //	    record := &kgo.Record{Topic: topic, Key: key, Value: value}
 //	    return p.client.ProduceSync(ctx, record).FirstErr()
 //	}
-func NewProducer(cfg *config.KafkaConfig) Producer {
+func NewProducer(cfg *config.KafkaConfig) *KafkaProducer {
 	panic("kafka: producer not implemented - see comments for implementation guide")
 }
 
@@ -73,11 +51,7 @@ func NewProducer(cfg *config.KafkaConfig) Producer {
 //
 //	import "github.com/twmb/franz-go/pkg/kgo"
 //
-//	type consumer struct {
-//	    client *kgo.Client
-//	}
-//
-//	func NewConsumer(cfg *config.KafkaConfig, topics []string) (Consumer, error) {
+//	func NewConsumer(cfg *config.KafkaConfig, topics []string) (*KafkaConsumer, error) {
 //	    brokers := strings.Split(cfg.Brokers, ",")
 //	    client, err := kgo.NewClient(
 //	        kgo.SeedBrokers(brokers...),
@@ -87,10 +61,10 @@ func NewProducer(cfg *config.KafkaConfig) Producer {
 //	    if err != nil {
 //	        return nil, err
 //	    }
-//	    return &consumer{client: client}, nil
+//	    return &KafkaConsumer{client: client}, nil
 //	}
 //
-//	func (c *consumer) Subscribe(ctx context.Context, topics []string, handler func(key, value []byte) error) error {
+//	func (c *KafkaConsumer) Subscribe(ctx context.Context, topics []string, handler func(key, value []byte) error) error {
 //	    for {
 //	        fetches := c.client.PollFetches(ctx)
 //	        if err := ctx.Err(); err != nil {
@@ -101,6 +75,6 @@ func NewProducer(cfg *config.KafkaConfig) Producer {
 //	        })
 //	    }
 //	}
-func NewConsumer(cfg *config.KafkaConfig) Consumer {
+func NewConsumer(cfg *config.KafkaConfig) *KafkaConsumer {
 	panic("kafka: consumer not implemented - see comments for implementation guide")
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -9,14 +10,18 @@ import (
 )
 
 type Config struct {
-	Port       int    `mapstructure:"PORT"`
 	AppEnv     string `mapstructure:"APP_ENV"`
+	Server     ServerConfig
 	DB         DBConfig
 	Redis      RedisConfig
 	Kafka      KafkaConfig
 	Qdrant     QdrantConfig
 	Genkit     GenkitConfig
 	PokemonAPI PokemonAPIConfig
+}
+
+type ServerConfig struct {
+	Addr string
 }
 
 type DBConfig struct {
@@ -105,8 +110,10 @@ func Load() {
 	}
 
 	cfg = Config{
-		Port:   viper.GetInt("PORT"),
 		AppEnv: viper.GetString("APP_ENV"),
+		Server: ServerConfig{
+			Addr: fmt.Sprintf(":%d", viper.GetInt("PORT")),
+		},
 		DB: DBConfig{
 			Host:     viper.GetString("DB_HOST"),
 			Port:     viper.GetString("DB_PORT"),

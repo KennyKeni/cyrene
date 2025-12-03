@@ -10,31 +10,17 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"cyrene/internal/config"
+	"cyrene/internal/platform/config"
 )
 
-// Service represents a service that interacts with a database.
-type Service interface {
-	// Health returns a map of health status information.
-	// The keys and values in the map are service-specific.
-	Health() map[string]string
-
-	// Close terminates the database connection.
-	// It returns an error if the connection cannot be closed.
-	Close() error
-
-	// DB returns the underlying database connection for use with go-jet.
-	DB() *sql.DB
-}
-
-type service struct {
+type PostgresDB struct {
 	db     *sql.DB
 	dbName string
 }
 
-var dbInstance *service
+var dbInstance *PostgresDB
 
-func New() Service {
+func New() *PostgresDB {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
@@ -48,7 +34,7 @@ func New() Service {
 	if err != nil {
 		log.Fatal(err)
 	}
-	dbInstance = &service{
+	dbInstance = &PostgresDB{
 		db:     db,
 		dbName: dbCfg.Database,
 	}
@@ -56,13 +42,13 @@ func New() Service {
 }
 
 // DB returns the underlying database connection for use with go-jet.
-func (s *service) DB() *sql.DB {
+func (s *PostgresDB) DB() *sql.DB {
 	return s.db
 }
 
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
-func (s *service) Health() map[string]string {
+func (s *PostgresDB) Health() map[string]string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -115,7 +101,7 @@ func (s *service) Health() map[string]string {
 // It logs a message indicating the disconnection from the specific database.
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
-func (s *service) Close() error {
+func (s *PostgresDB) Close() error {
 	log.Printf("Disconnected from database: %s", s.dbName)
 	return s.db.Close()
 }

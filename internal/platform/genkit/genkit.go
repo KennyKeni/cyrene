@@ -2,7 +2,7 @@ package genkit
 
 import (
 	"context"
-	"cyrene/internal/config"
+	"cyrene/internal/platform/config"
 
 	"github.com/firebase/genkit/go/ai"
 	"github.com/firebase/genkit/go/genkit"

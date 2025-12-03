@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -10,52 +11,65 @@ import (
 	"syscall"
 	"time"
 
-	"cyrene/internal/config"
-	"cyrene/internal/server"
+	"cyrene/internal/platform/config"
+	"cyrene/internal/platform/server"
 )
-
-func gracefulShutdown(apiServer *http.Server, done chan bool) {
-	// Create context that listens for the interrupt signal from the OS.
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	// Listen for the interrupt signal.
-	<-ctx.Done()
-
-	log.Println("shutting down gracefully, press Ctrl+C again to force")
-	stop() // Allow Ctrl+C to force shutdown
-
-	// The context is used to inform the server it has 5 seconds to finish
-	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown with error: %v", err)
-	}
-
-	log.Println("Server exiting")
-
-	// Notify the main goroutine that the shutdown is complete
-	done <- true
-}
 
 func main() {
 	config.Load()
+	cfg := config.Get()
 
-	server := server.NewServer()
+	// Build routes
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", handleHello)
+	mux.HandleFunc("GET /health", handleHealth)
 
-	// Create a done channel to signal when the shutdown is complete
+	// TODO: Wire feature handlers here
+	// Example:
+	// queryHandler := query.NewHandler(querySvc)
+	// queryHandler.RegisterRoutes(mux)
+
+	// Create server with middleware
+	handler := server.CORSMiddleware(mux)
+	srv := server.New(cfg, handler)
+
+	// Graceful shutdown
 	done := make(chan bool, 1)
+	go gracefulShutdown(srv, done)
 
-	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(server, done)
-
-	err := server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+	log.Printf("Server starting on %s", cfg.Server.Addr)
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}
 
-	// Wait for the graceful shutdown to complete
 	<-done
 	log.Println("Graceful shutdown complete.")
+}
+
+func gracefulShutdown(srv *http.Server, done chan bool) {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	<-ctx.Done()
+	log.Println("shutting down gracefully, press Ctrl+C again to force")
+	stop()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Server forced to shutdown with error: %v", err)
+	}
+
+	done <- true
+}
+
+func handleHello(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Hello World"})
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
