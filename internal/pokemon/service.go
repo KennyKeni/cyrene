@@ -5,8 +5,16 @@ import (
 	"cyrene/internal/config"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
+
+type Pokemon struct {
+	ID         string
+	Identifier string
+	RawJSON    string
+	Metadata   map[string]any
+}
 
 type Service interface {
 	GetPokemonByID(ctx context.Context, id string) (*Pokemon, error)
@@ -34,7 +42,12 @@ func (s *service) GetPokemonByID(ctx context.Context, id string) (*Pokemon, erro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 
 	// TODO Switch to JSON v2
 	var raw map[string]any

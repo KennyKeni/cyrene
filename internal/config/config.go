@@ -15,7 +15,7 @@ type Config struct {
 	Redis      RedisConfig
 	Kafka      KafkaConfig
 	Qdrant     QdrantConfig
-	Elysia     ElysiaConfig
+	Genkit     GenkitConfig
 	PokemonAPI PokemonAPIConfig
 }
 
@@ -41,12 +41,16 @@ type KafkaConfig struct {
 }
 
 type QdrantConfig struct {
-	Host   string `mapstructure:"QDRANT_HOST"`
-	Port   int    `mapstructure:"QDRANT_PORT"`
-	APIKey string `mapstructure:"QDRANT_API_KEY"`
+	Host               string `mapstructure:"QDRANT_HOST"`
+	Port               int    `mapstructure:"QDRANT_PORT"`
+	APIKey             string `mapstructure:"QDRANT_API_KEY"`
+	Collection         string `mapstructure:"QDRANT_COLLECTION"`
+	CollectionDim      uint   `mapstructure:"QDRANT_COLLECTION_DIM"`
+	CacheCollection    string `mapstructure:"QDRANT_CACHE_COLLECTION"`
+	CacheCollectionDim uint   `mapstructure:"QDRANT_CACHE_COLLECTION_DIM"`
 }
 
-type ElysiaConfig struct {
+type GenkitConfig struct {
 	EmbedURL    string `mapstructure:"EMBED_URL"`
 	EmbedAPIKey string `mapstructure:"EMBED_API_KEY"`
 	EmbedModel  string `mapstructure:"EMBED_MODEL"`
@@ -83,7 +87,11 @@ func Load() {
 	viper.SetDefault("QDRANT_HOST", "localhost")
 	viper.SetDefault("QDRANT_PORT", "6334")
 	viper.SetDefault("QDRANT_API_KEY", "")
-	viper.SetDefault("EMBED_URL", "https://openrouter.ai/api/v1")
+	viper.SetDefault("QDRANT_COLLECTION", "cobblemon")
+	viper.SetDefault("QDRANT_COLLECTION_DIM", 4096)
+	viper.SetDefault("QDRANT_CACHE_COLLECTION", "cache")
+	viper.SetDefault("QDRANT_CACHE_COLLECTION_DIM", 1024)
+	viper.SetDefault("EMBED_URL", "https://openrouter.ai/api/v1/embeddings")
 	viper.SetDefault("AGENT_URL", "https://openrouter.ai/api/v1")
 	viper.SetDefault("EMBED_MODEL", "qwen/qwen3-embedding-8b")
 	viper.SetDefault("AGENT_MODEL", "openai/gpt-oss-120b")
@@ -122,7 +130,7 @@ func Load() {
 			Port:   viper.GetInt("QDRANT_PORT"),
 			APIKey: viper.GetString("QDRANT_API_KEY"),
 		},
-		Elysia: ElysiaConfig{
+		Genkit: GenkitConfig{
 			EmbedURL:    viper.GetString("EMBED_URL"),
 			EmbedAPIKey: viper.GetString("EMBED_API_KEY"),
 			EmbedModel:  viper.GetString("EMBED_MODEL"),
@@ -156,4 +164,4 @@ func GetQdrant() *QdrantConfig {
 	return &cfg.Qdrant
 }
 
-func GetElysia() *ElysiaConfig { return &cfg.Elysia }
+func GetGenkit() *GenkitConfig { return &cfg.Genkit }

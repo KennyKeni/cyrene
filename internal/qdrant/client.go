@@ -7,26 +7,12 @@ import (
 	"github.com/qdrant/go-client/qdrant"
 )
 
-const partition = "partition"
-
-type Service interface {
-	NewCollection(ctx context.Context, name string, vectorSize uint64) error
-	DeleteCollection(ctx context.Context, name string) error
-	CollectionExists(ctx context.Context, name string) (bool, error)
-
-	Upsert(ctx context.Context, collectionName string, points []Point) error
-	Delete(ctx context.Context, collectionName string, ids []string) error
-	Query(ctx context.Context, collectionName string, params SearchParams) ([]SearchResult, error)
-
-	Health(ctx context.Context) error
-	Close() error
+// Client wraps the Qdrant SDK.
+type Client struct {
+	inner *qdrant.Client
 }
 
-type service struct {
-	client *qdrant.Client
-}
-
-func New(cfg *config.QdrantConfig) (Service, error) {
+func New(cfg *config.QdrantConfig) (*Client, error) {
 	qc, err := qdrant.NewClient(&qdrant.Config{
 		Host:   cfg.Host,
 		Port:   cfg.Port,
@@ -37,8 +23,8 @@ func New(cfg *config.QdrantConfig) (Service, error) {
 		return nil, err
 	}
 
-	return &service{
-		client: qc,
+	return &Client{
+		inner: qc,
 	}, nil
 }
 
@@ -90,8 +76,8 @@ type BoolFilter struct {
 	Op    FilterOp
 }
 
-func (s *service) NewCollection(ctx context.Context, name string, vectorSize uint64) error {
-	return s.client.CreateCollection(ctx, &qdrant.CreateCollection{
+func (c *Client) NewCollection(ctx context.Context, name string, vectorSize uint64) error {
+	return c.inner.CreateCollection(ctx, &qdrant.CreateCollection{
 		CollectionName: name,
 		VectorsConfig: qdrant.NewVectorsConfig(&qdrant.VectorParams{
 			Size:     vectorSize,
@@ -104,15 +90,15 @@ func (s *service) NewCollection(ctx context.Context, name string, vectorSize uin
 	})
 }
 
-func (s *service) DeleteCollection(ctx context.Context, collectionName string) error {
-	return s.client.DeleteCollection(ctx, collectionName)
+func (c *Client) DeleteCollection(ctx context.Context, collectionName string) error {
+	return c.inner.DeleteCollection(ctx, collectionName)
 }
 
-func (s *service) CollectionExists(ctx context.Context, collectionName string) (bool, error) {
-	return s.client.CollectionExists(ctx, collectionName)
+func (c *Client) CollectionExists(ctx context.Context, collectionName string) (bool, error) {
+	return c.inner.CollectionExists(ctx, collectionName)
 }
 
-func (s *service) Upsert(ctx context.Context, collectionName string, points []Point) error {
+func (c *Client) Upsert(ctx context.Context, collectionName string, points []Point) error {
 	p := make([]*qdrant.PointStruct, len(points))
 	for i, point := range points {
 		p[i] = &qdrant.PointStruct{
@@ -122,7 +108,7 @@ func (s *service) Upsert(ctx context.Context, collectionName string, points []Po
 		}
 	}
 
-	_, err := s.client.Upsert(ctx, &qdrant.UpsertPoints{
+	_, err := c.inner.Upsert(ctx, &qdrant.UpsertPoints{
 		CollectionName: collectionName,
 		Points:         p,
 	})
@@ -130,13 +116,13 @@ func (s *service) Upsert(ctx context.Context, collectionName string, points []Po
 	return err
 }
 
-func (s *service) Delete(ctx context.Context, collectionName string, ids []string) error {
+func (c *Client) Delete(ctx context.Context, collectionName string, ids []string) error {
 	p := make([]*qdrant.PointId, len(ids))
 	for i, id := range ids {
 		p[i] = qdrant.NewID(id)
 	}
 
-	_, err := s.client.Delete(ctx, &qdrant.DeletePoints{
+	_, err := c.inner.Delete(ctx, &qdrant.DeletePoints{
 		CollectionName: collectionName,
 		Points:         qdrant.NewPointsSelector(p...),
 	})
@@ -144,7 +130,7 @@ func (s *service) Delete(ctx context.Context, collectionName string, ids []strin
 	return err
 }
 
-func (s *service) Query(ctx context.Context, collectionName string, params SearchParams) ([]SearchResult, error) {
+func (c *Client) Query(ctx context.Context, collectionName string, params SearchParams) ([]SearchResult, error) {
 	query := &qdrant.QueryPoints{
 		CollectionName: collectionName,
 		Query:          qdrant.NewQuery(params.Vector...),
@@ -206,7 +192,7 @@ func (s *service) Query(ctx context.Context, collectionName string, params Searc
 		}
 	}
 
-	resp, err := s.client.Query(ctx, query)
+	resp, err := c.inner.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -260,11 +246,29 @@ func valueToAny(v *qdrant.Value) any {
 	}
 }
 
-func (s *service) Health(ctx context.Context) error {
-	_, err := s.client.HealthCheck(ctx)
+func (c *Client) NewIndex(ctx context.Context, collectionName, key string) error {
+	_, err := c.inner.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
+		CollectionName: collectionName,
+		FieldName:      key,
+	})
+
 	return err
 }
 
-func (s *service) Close() error {
-	return s.client.Close()
+func (c *Client) DeleteIndex(ctx context.Context, collectionName, key string) error {
+	_, err := c.inner.DeleteFieldIndex(ctx, &qdrant.DeleteFieldIndexCollection{
+		CollectionName: collectionName,
+		FieldName:      key,
+	})
+
+	return err
+}
+
+func (c *Client) Health(ctx context.Context) error {
+	_, err := c.inner.HealthCheck(ctx)
+	return err
+}
+
+func (c *Client) Close() error {
+	return c.inner.Close()
 }
