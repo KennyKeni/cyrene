@@ -13,3 +13,35 @@ type SearchResult struct {
 	Score   float32
 	Payload map[string]any
 }
+
+type FilterOp string
+
+const (
+	FilterAND FilterOp = "AND"
+	FilterOR  FilterOp = "OR"
+	FilterNOT FilterOp = "NOT"
+)
+
+type StringFilter struct {
+	Field string
+	Value string
+	Op    FilterOp
+}
+
+type IntFilter struct {
+	Field string
+	Value int64
+	Op    FilterOp
+}
+
+type BoolFilter struct {
+	Field string
+	Value bool
+	Op    FilterOp
+}
+
+type Filter struct {
+	StringFilters []StringFilter
+	IntFilters    []IntFilter
+	BoolFilters   []BoolFilter
+}

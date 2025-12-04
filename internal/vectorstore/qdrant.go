@@ -26,7 +26,7 @@ func NewQdrantStore(client *platformqdrant.Client, cfg *config.QdrantConfig) *Qd
 // Compile safety
 var _ Store = (*QdrantStore)(nil)
 
-func (s *QdrantStore) Upsert(ctx context.Context, points []Point) error {
+func (s *QdrantStore) Upsert(ctx context.Context, points ...Point) error {
 	p := make([]*qdrant.PointStruct, len(points))
 	for i, point := range points {
 		p[i] = &qdrant.PointStruct{
@@ -44,13 +44,19 @@ func (s *QdrantStore) Upsert(ctx context.Context, points []Point) error {
 	return err
 }
 
-func (s *QdrantStore) Search(ctx context.Context, vector []float32, limit int) ([]SearchResult, error) {
-	resp, err := s.client.Query(ctx, &qdrant.QueryPoints{
+func (s *QdrantStore) Search(ctx context.Context, vector []float32, limit int, filter *Filter) ([]SearchResult, error) {
+	query := &qdrant.QueryPoints{
 		CollectionName: s.collection,
 		Query:          qdrant.NewQuery(vector...),
 		Limit:          qdrant.PtrOf(uint64(limit)),
 		WithPayload:    qdrant.NewWithPayload(true),
-	})
+	}
+
+	if filter != nil {
+		query.Filter = buildFilter(*filter)
+	}
+
+	resp, err := s.client.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +73,21 @@ func (s *QdrantStore) Search(ctx context.Context, vector []float32, limit int) (
 	return results, nil
 }
 
-func (s *QdrantStore) Delete(ctx context.Context, ids []string) error {
+func (s *QdrantStore) Delete(ctx context.Context, filter Filter) error {
+	f := buildFilter(filter)
+	if f == nil {
+		return nil
+	}
+
+	_, err := s.client.Delete(ctx, &qdrant.DeletePoints{
+		CollectionName: s.collection,
+		Points:         qdrant.NewPointsSelectorFilter(f),
+	})
+
+	return err
+}
+
+func (s *QdrantStore) DeleteByID(ctx context.Context, ids ...string) error {
 	p := make([]*qdrant.PointId, len(ids))
 	for i, id := range ids {
 		p[i] = qdrant.NewID(id)
@@ -79,6 +99,58 @@ func (s *QdrantStore) Delete(ctx context.Context, ids []string) error {
 	})
 
 	return err
+}
+
+func buildFilter(filter Filter) *qdrant.Filter {
+	var should []*qdrant.Condition
+	var must []*qdrant.Condition
+	var mustNot []*qdrant.Condition
+
+	for _, f := range filter.StringFilters {
+		cond := qdrant.NewMatch(f.Field, f.Value)
+		switch f.Op {
+		case FilterOR:
+			should = append(should, cond)
+		case FilterNOT:
+			mustNot = append(mustNot, cond)
+		default:
+			must = append(must, cond)
+		}
+	}
+
+	for _, f := range filter.IntFilters {
+		cond := qdrant.NewMatchInt(f.Field, f.Value)
+		switch f.Op {
+		case FilterOR:
+			should = append(should, cond)
+		case FilterNOT:
+			mustNot = append(mustNot, cond)
+		default:
+			must = append(must, cond)
+		}
+	}
+
+	for _, f := range filter.BoolFilters {
+		cond := qdrant.NewMatchBool(f.Field, f.Value)
+		switch f.Op {
+		case FilterOR:
+			should = append(should, cond)
+		case FilterNOT:
+			mustNot = append(mustNot, cond)
+		default:
+			must = append(must, cond)
+		}
+	}
+
+	if len(should) == 0 && len(must) == 0 && len(mustNot) == 0 {
+		return nil
+	}
+
+	return &qdrant.Filter{
+		Should:  should,
+		Must:    must,
+		MustNot: mustNot,
+	}
 }
 
 func extractPayload(payload map[string]*qdrant.Value) map[string]any {

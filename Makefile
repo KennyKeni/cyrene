@@ -1,5 +1,9 @@
 # Simple Makefile for a Go project
 
+# Load .env file
+include .env
+export
+
 # Required for encoding/json/v2 (used by Elysia/openai-go)
 export GOEXPERIMENT := jsonv2
 
@@ -50,6 +54,17 @@ clean:
 	@echo "Cleaning..."
 	@rm -f main
 
+# Run database migrations
+migrate-up:
+	@goose -dir migrations postgres "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=disable" up
+
+migrate-down:
+	@goose -dir migrations postgres "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=disable" down
+
+# Generate Jet models from database schema
+jet-gen:
+	@jet -dsn="postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=disable" -schema=$(DB_SCHEMA) -path=./internal/platform/postgres/jet
+
 # Live Reload
 watch:
 	@if command -v air > /dev/null; then \
@@ -67,4 +82,4 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run test clean watch docker-run docker-down itest
+.PHONY: all build run test clean watch docker-run docker-down itest migrate-up migrate-down jet-gen

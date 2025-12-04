@@ -20,7 +20,7 @@ func New(cfg *config.GenkitConfig, clients *genkit.Clients) *Service {
 	}
 }
 
-func (s *Service) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (s *Service) Embed(ctx context.Context, texts ...string) ([][]float32, error) {
 	docs := make([]*ai.Document, len(texts))
 	for i, text := range texts {
 		docs[i] = ai.DocumentFromText(text, nil)
