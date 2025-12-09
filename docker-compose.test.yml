@@ -1,0 +1,46 @@
+services:
+  psql_test:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  qdrant_test:
+    image: qdrant/qdrant:latest
+    ports:
+      - "${QDRANT_PORT}:6334"
+    tmpfs:
+      - /qdrant/storage
+
+  kafka_test:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://localhost:${KAFKA_PORT}
+      - --set redpanda.auto_create_topics_enabled=true
+    ports:
+      - "${KAFKA_PORT}:9092"
+    tmpfs:
+      - /var/lib/redpanda/data:mode=1777
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

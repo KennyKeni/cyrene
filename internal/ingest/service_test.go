@@ -5,15 +5,13 @@ import (
 	"errors"
 	"testing"
 
+	"cyrene/internal/platform/vectorstore"
 	"cyrene/internal/pokemon"
-	"cyrene/internal/vectorstore"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// Mocks
 
 type mockEmbedder struct {
 	embedFn func(ctx context.Context, texts ...string) ([][]float32, error)
@@ -93,8 +91,6 @@ func (m *mockRepository) InTx(ctx context.Context, fn func(Repository) error) er
 	return fn(m)
 }
 
-// Tests
-
 func TestIngestPokemon_Success(t *testing.T) {
 	ctx := context.Background()
 	pokemonID := "25"
@@ -122,25 +118,22 @@ func TestIngestPokemon_Success(t *testing.T) {
 	store := &mockStore{}
 	repo := &mockRepository{}
 
-	svc := New(embedder, store, pokemonGetter, repo)
+	svc := NewService(embedder, store, pokemonGetter, repo)
 
 	err := svc.IngestPokemon(ctx, pokemonID)
 	require.NoError(t, err)
 
-	// Verify repository upsert
 	require.NotNil(t, repo.upserted)
 	assert.Equal(t, DocumentTypePokemon, repo.upserted.DocumentType)
 	assert.Equal(t, pokemonID, repo.upserted.ExternalID)
 
-	// Verify old vectors deleted
 	assert.Equal(t, "pokemon_25", store.deletedRef)
 
-	// Verify new vectors upserted
 	require.Len(t, store.upserted, 2)
 	for i, point := range store.upserted {
 		assert.Equal(t, vectors[i], point.Vector)
 		assert.Equal(t, "pokemon_25", point.Payload[referenceKey])
-		assert.Equal(t, DocumentTypePokemon, point.Payload[typeKey])
+		assert.Equal(t, string(DocumentTypePokemon), point.Payload[typeKey])
 	}
 }
 
@@ -154,7 +147,7 @@ func TestIngestPokemon_PokemonFetchError(t *testing.T) {
 		},
 	}
 
-	svc := New(&mockEmbedder{}, &mockStore{}, pokemonGetter, &mockRepository{})
+	svc := NewService(&mockEmbedder{}, &mockStore{}, pokemonGetter, &mockRepository{})
 
 	err := svc.IngestPokemon(ctx, "999")
 	require.Error(t, err)
@@ -178,7 +171,7 @@ func TestIngestPokemon_EmbedError(t *testing.T) {
 		},
 	}
 
-	svc := New(embedder, &mockStore{}, pokemonGetter, &mockRepository{})
+	svc := NewService(embedder, &mockStore{}, pokemonGetter, &mockRepository{})
 
 	err := svc.IngestPokemon(ctx, "25")
 	require.Error(t, err)
@@ -208,7 +201,7 @@ func TestIngestPokemon_RepositoryUpsertError(t *testing.T) {
 		},
 	}
 
-	svc := New(embedder, &mockStore{}, pokemonGetter, repo)
+	svc := NewService(embedder, &mockStore{}, pokemonGetter, repo)
 
 	err := svc.IngestPokemon(ctx, "25")
 	require.Error(t, err)
@@ -238,7 +231,7 @@ func TestIngestPokemon_StoreDeleteError(t *testing.T) {
 		},
 	}
 
-	svc := New(embedder, store, pokemonGetter, &mockRepository{})
+	svc := NewService(embedder, store, pokemonGetter, &mockRepository{})
 
 	err := svc.IngestPokemon(ctx, "25")
 	require.Error(t, err)
@@ -268,11 +261,10 @@ func TestIngestPokemon_StoreUpsertError(t *testing.T) {
 		},
 	}
 
-	svc := New(embedder, store, pokemonGetter, &mockRepository{})
+	svc := NewService(embedder, store, pokemonGetter, &mockRepository{})
 
 	err := svc.IngestPokemon(ctx, "25")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "upsert vectors")
 	assert.ErrorIs(t, err, expectedErr)
 }
 

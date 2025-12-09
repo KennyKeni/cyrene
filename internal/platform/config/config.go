@@ -41,8 +41,8 @@ type RedisConfig struct {
 }
 
 type KafkaConfig struct {
-	Brokers       string `mapstructure:"KAFKA_BROKERS"`
-	ConsumerGroup string `mapstructure:"KAFKA_CONSUMER_GROUP"`
+	Brokers       []string `mapstructure:"KAFKA_BROKERS"`
+	ConsumerGroup string   `mapstructure:"KAFKA_CONSUMER_GROUP"`
 }
 
 type QdrantConfig struct {
@@ -87,10 +87,10 @@ func Load() {
 	viper.SetDefault("REDIS_HOST", "localhost")
 	viper.SetDefault("REDIS_PORT", "6379")
 	viper.SetDefault("REDIS_DB", 0)
-	viper.SetDefault("KAFKA_BROKERS", "localhost:9092")
+	viper.SetDefault("KAFKA_BROKERS", []string{"localhost:19092"})
 	viper.SetDefault("KAFKA_CONSUMER_GROUP", "cyrene")
 	viper.SetDefault("QDRANT_HOST", "localhost")
-	viper.SetDefault("QDRANT_PORT", "6334")
+	viper.SetDefault("QDRANT_PORT", 6334)
 	viper.SetDefault("QDRANT_API_KEY", "")
 	viper.SetDefault("QDRANT_COLLECTION", "cobblemon")
 	viper.SetDefault("QDRANT_COLLECTION_DIM", 4096)
@@ -99,7 +99,7 @@ func Load() {
 	viper.SetDefault("EMBED_URL", "https://openrouter.ai/api/v1/embeddings")
 	viper.SetDefault("AGENT_URL", "https://openrouter.ai/api/v1")
 	viper.SetDefault("EMBED_MODEL", "qwen/qwen3-embedding-8b")
-	viper.SetDefault("AGENT_MODEL", "openai/gpt-oss-120b")
+	viper.SetDefault("AGENT_MODEL", "openai/gpt-oss-120b:exacto")
 	//viper.SetDefault("POKEMON_API_KEY", "")
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -129,13 +129,17 @@ func Load() {
 			DB:       viper.GetInt("REDIS_DB"),
 		},
 		Kafka: KafkaConfig{
-			Brokers:       viper.GetString("KAFKA_BROKERS"),
+			Brokers:       viper.GetStringSlice("KAFKA_BROKERS"),
 			ConsumerGroup: viper.GetString("KAFKA_CONSUMER_GROUP"),
 		},
 		Qdrant: QdrantConfig{
-			Host:   viper.GetString("QDRANT_HOST"),
-			Port:   viper.GetInt("QDRANT_PORT"),
-			APIKey: viper.GetString("QDRANT_API_KEY"),
+			Host:               viper.GetString("QDRANT_HOST"),
+			Port:               viper.GetInt("QDRANT_PORT"),
+			APIKey:             viper.GetString("QDRANT_API_KEY"),
+			Collection:         viper.GetString("QDRANT_COLLECTION"),
+			CollectionDim:      viper.GetUint("QDRANT_COLLECTION_DIM"),
+			CacheCollection:    viper.GetString("QDRANT_CACHE_COLLECTION"),
+			CacheCollectionDim: viper.GetUint("QDRANT_CACHE_COLLECTION_DIM"),
 		},
 		Genkit: GenkitConfig{
 			EmbedURL:    viper.GetString("EMBED_URL"),

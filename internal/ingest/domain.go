@@ -12,6 +12,13 @@ var ErrNotFound = errors.New("document not found")
 
 const referenceKey = "reference"
 const typeKey = "type"
+const contentKey = "content"
+
+type Topic string
+
+const (
+	TopicIngestion Topic = "ingestion"
+)
 
 type DocumentType string
 
@@ -30,4 +37,9 @@ type IngestedDocument struct {
 	ExternalID   string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+type IngestionEvent struct {
+	Type DocumentType `json:"type"`
+	ID   string       `json:"id"`
 }

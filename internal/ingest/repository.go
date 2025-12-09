@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-jet/jet/v2/postgres"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/google/uuid"
 )
 
@@ -95,7 +96,7 @@ func (r *postgresRepository) FindByRef(ctx context.Context, dt DocumentType, ext
 	var dest model.IngestedDocuments
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, qrm.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("find document: %w", err)

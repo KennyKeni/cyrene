@@ -40,14 +40,26 @@ docker-down:
 		docker-compose down; \
 	fi
 
-# Test the application
 test:
-	@echo "Testing..."
+	@echo "Running unit tests..."
 	@go test ./... -v
-# Integrations Tests for the application
-itest:
+
+itest: test-env-up test-migrate
 	@echo "Running integration tests..."
-	@go test ./internal/database -v
+	@set -a && . ./.env.test && set +a && go test ./... -v -tags=integration
+	@$(MAKE) test-env-down
+
+test-env-up:
+	@unset DB_PORT DB_DATABASE QDRANT_PORT KAFKA_PORT && \
+		docker compose -p cyrene-test --env-file .env.test -f docker-compose.test.yml up -d --wait
+
+test-env-down:
+	@unset DB_PORT DB_DATABASE QDRANT_PORT KAFKA_PORT && \
+		docker compose -p cyrene-test --env-file .env.test -f docker-compose.test.yml down
+
+test-migrate:
+	@set -a && . ./.env.test && set +a && \
+		goose -dir migrations postgres "postgres://$$DB_USERNAME:$$DB_PASSWORD@$$DB_HOST:$$DB_PORT/$$DB_DATABASE?sslmode=disable" up
 
 # Clean the binary
 clean:
@@ -82,4 +94,4 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run test clean watch docker-run docker-down itest migrate-up migrate-down jet-gen
+.PHONY: all build run test clean watch docker-run docker-down itest test-env-up test-env-down test-migrate migrate-up migrate-down jet-gen

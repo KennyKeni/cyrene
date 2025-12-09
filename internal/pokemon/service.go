@@ -15,7 +15,7 @@ type Service struct {
 	baseURL string
 }
 
-func New(cfg config.PokemonAPIConfig) *Service {
+func NewService(cfg config.PokemonAPIConfig) *Service {
 	return &Service{
 		client:  &http.Client{},
 		baseURL: cfg.BaseURL,

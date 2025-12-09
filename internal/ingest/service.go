@@ -2,51 +2,69 @@ package ingest
 
 import (
 	"context"
-	"cyrene/internal/vectorstore"
 	"fmt"
+
+	"cyrene/internal/platform/vectorstore"
 
 	"github.com/google/uuid"
 )
 
-type Service struct {
-	embedder       embedder
-	store          vectorstore.Store
-	pokemonService pokemonGetter
+type service struct {
+	embedService   embedService
+	store          vectorStore
+	pokemonService pokemonService
 	repository     Repository
 }
 
-func New(embedder embedder, store vectorstore.Store, pokemonService pokemonGetter, repository Repository) *Service {
-	return &Service{
-		embedder:       embedder,
+func NewService(embedService embedService, store vectorStore, pokemonService pokemonService, repository Repository) *service {
+	return &service{
+		embedService:   embedService,
 		store:          store,
 		pokemonService: pokemonService,
 		repository:     repository,
 	}
 }
 
-func (s *Service) IngestPokemon(ctx context.Context, pokemonID string) error {
+func (s *service) Ingest(ctx context.Context, event IngestionEvent) error {
+	switch event.Type {
+	case DocumentTypePokemon:
+		return s.ingestPokemon(ctx, event.ID)
+	default:
+		return fmt.Errorf("unsupported document type: %s", event.Type)
+	}
+}
+
+func (s *service) ingestPokemon(ctx context.Context, pokemonID string) error {
 	pokemon, err := s.pokemonService.GetPokemonByID(ctx, pokemonID)
 	if err != nil {
 		return fmt.Errorf("fetch pokemon: %w", err)
 	}
 
-	vectors, err := s.embedder.Embed(ctx, pokemon.RawJSON)
+	embeddingText := pokemon.EmbeddingText()
+	if embeddingText == "" {
+		return fmt.Errorf("pokemon %s has empty embedding text", pokemonID)
+	}
+
+	vectors, err := s.embedService.Embed(ctx, embeddingText)
 	if err != nil {
 		return fmt.Errorf("embed pokemon: %w", err)
 	}
 
+	if len(vectors) == 0 {
+		return fmt.Errorf("no embeddings generated for pokemon %s", pokemonID)
+	}
+
 	return s.repository.InTx(ctx, func(repo Repository) error {
-		return s.ingestDocument(ctx, repo, DocumentTypePokemon, pokemonID, vectors)
+		return s.ingestDocument(ctx, repo, DocumentTypePokemon, pokemonID, embeddingText, vectors)
 	})
 }
 
-// ingestDocument upserts a document record to Postgres and stores vectors in Qdrant.
-// Embedding/splitting logic is handled by the caller.
-func (s *Service) ingestDocument(
+func (s *service) ingestDocument(
 	ctx context.Context,
 	repo Repository,
 	docType DocumentType,
 	externalID string,
+	content string,
 	vectors [][]float32,
 ) error {
 	reference := NewDocumentID(docType, externalID)
@@ -72,7 +90,8 @@ func (s *Service) ingestDocument(
 	points := make([]vectorstore.Point, len(vectors))
 	metadata := map[string]any{
 		referenceKey: reference,
-		typeKey:      docType,
+		typeKey:      string(docType),
+		contentKey:   content,
 	}
 
 	for i, vector := range vectors {

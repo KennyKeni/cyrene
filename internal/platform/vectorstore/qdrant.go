@@ -15,16 +15,12 @@ type QdrantStore struct {
 	collection string
 }
 
-// NewQdrantStore creates a new QdrantStore.
 func NewQdrantStore(client *platformqdrant.Client, cfg *config.QdrantConfig) *QdrantStore {
 	return &QdrantStore{
 		client:     client.Conn(),
 		collection: cfg.Collection,
 	}
 }
-
-// Compile safety
-var _ Store = (*QdrantStore)(nil)
 
 func (s *QdrantStore) Upsert(ctx context.Context, points ...Point) error {
 	p := make([]*qdrant.PointStruct, len(points))

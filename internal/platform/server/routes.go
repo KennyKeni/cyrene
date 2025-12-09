@@ -2,7 +2,17 @@ package server
 
 import (
 	"net/http"
+	"strings"
 )
+
+func TrailingSlashMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" && !strings.HasSuffix(r.URL.Path, "/") {
+			r.URL.Path = r.URL.Path + "/"
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 // CORSMiddleware wraps a handler with CORS headers.
 func CORSMiddleware(next http.Handler) http.Handler {

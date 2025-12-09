@@ -11,31 +11,100 @@ import (
 	"syscall"
 	"time"
 
+	"cyrene/internal/ingest"
 	"cyrene/internal/platform/config"
+	"cyrene/internal/platform/genkit"
+	"cyrene/internal/platform/kafka"
+	"cyrene/internal/platform/postgres"
+	"cyrene/internal/platform/qdrant"
 	"cyrene/internal/platform/server"
+	"cyrene/internal/platform/vectorstore"
+	"cyrene/internal/pokemon"
+	"cyrene/internal/rag"
 )
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	config.Load()
 	cfg := config.Get()
 
+	// Platform clients
+	pgDB := postgres.New()
+	defer func(pgDB *postgres.PostgresDB) {
+		err := pgDB.Close()
+		if err != nil {
+			log.Printf("failed to close postgres: %v", err)
+		}
+	}(pgDB)
+
+	qdrantClient, err := qdrant.New(&cfg.Qdrant)
+	if err != nil {
+		log.Fatalf("failed to create qdrant client: %v", err)
+	}
+	defer func(qdrantClient *qdrant.Client) {
+		err := qdrantClient.Close()
+		if err != nil {
+			log.Printf("failed to close qdrant: %v", err)
+		}
+	}(qdrantClient)
+
+	if err := qdrantClient.EnsureCollection(ctx, cfg.Qdrant.Collection, uint64(cfg.Qdrant.CollectionDim)); err != nil {
+		log.Fatalf("failed to ensure qdrant collection: %v", err)
+	}
+	if err := qdrantClient.EnsureCollection(ctx, cfg.Qdrant.CacheCollection, uint64(cfg.Qdrant.CacheCollectionDim)); err != nil {
+		log.Fatalf("failed to ensure qdrant cache collection: %v", err)
+	}
+
+	if err := kafka.EnsureTopics(ctx, cfg.Kafka.Brokers, []string{string(ingest.TopicIngestion)}); err != nil {
+		log.Fatalf("failed to ensure kafka topics: %v", err)
+	}
+
+	genkitClients, err := genkit.New(ctx, &cfg.Genkit)
+	if err != nil {
+		log.Fatalf("failed to create genkit clients: %v", err)
+	}
+
+	// Services
+	vectorStore := vectorstore.NewQdrantStore(qdrantClient, &cfg.Qdrant)
+	pokemonSvc := pokemon.NewService(cfg.PokemonAPI)
+	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore)
+	ingestRepo := ingest.NewRepository(pgDB.DB())
+	ingestSvc := ingest.NewService(ragSvc, vectorStore, pokemonSvc, ingestRepo)
+
+	// Handlers
+	ingestHandler := ingest.NewHandler(ingestSvc)
+	ragHandler := rag.NewHandler(ragSvc)
+
+	// Kafka consumer
+	consumer, err := kafka.NewConsumer(&cfg.Kafka, map[string]kafka.Handler{
+		string(ingest.TopicIngestion): ingestHandler.HandleKafka,
+	})
+	if err != nil {
+		log.Fatalf("failed to create kafka consumer: %v", err)
+	}
+
+	go func() {
+		if err := consumer.Run(ctx); err != nil {
+			log.Printf("kafka consumer error: %v", err)
+		}
+	}()
+
 	// Build routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", handleHello)
+	mux.HandleFunc("GET /{$}", handleHello)
 	mux.HandleFunc("GET /health", handleHealth)
-
-	// TODO: Wire feature handlers here
-	// Example:
-	// queryHandler := query.NewHandler(querySvc)
-	// queryHandler.RegisterRoutes(mux)
+	mux.Handle("/ingest/", http.StripPrefix("/ingest", ingestHandler.RegisterRoutes()))
+	mux.Handle("/chat/", http.StripPrefix("/chat", ragHandler.RegisterRoutes()))
 
 	// Create server with middleware
-	handler := server.CORSMiddleware(mux)
+	handler := server.CORSMiddleware(server.TrailingSlashMiddleware(mux))
 	srv := server.New(cfg, handler)
 
 	// Graceful shutdown
 	done := make(chan bool, 1)
-	go gracefulShutdown(srv, done)
+	go gracefulShutdown(ctx, srv, done)
 
 	log.Printf("Server starting on %s", cfg.Server.Addr)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -46,21 +115,23 @@ func main() {
 	log.Println("Graceful shutdown complete.")
 }
 
-func gracefulShutdown(srv *http.Server, done chan bool) {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
+func gracefulShutdown(ctx context.Context, apiServer *http.Server, done chan bool) {
+	// Listen for the interrupt signal.
 	<-ctx.Done()
+
 	log.Println("shutting down gracefully, press Ctrl+C again to force")
-	stop()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := apiServer.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
+	log.Println("Server exiting")
+
+	// Notify the main goroutine that the shutdown is complete
 	done <- true
 }
 
