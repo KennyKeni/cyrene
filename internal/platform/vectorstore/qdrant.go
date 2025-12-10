@@ -3,7 +3,6 @@ package vectorstore
 import (
 	"context"
 
-	"cyrene/internal/platform/config"
 	platformqdrant "cyrene/internal/platform/qdrant"
 
 	"github.com/qdrant/go-client/qdrant"
@@ -13,13 +12,19 @@ import (
 type QdrantStore struct {
 	client     *qdrant.Client
 	collection string
+	dim        int
 }
 
-func NewQdrantStore(client *platformqdrant.Client, cfg *config.QdrantConfig) *QdrantStore {
+func NewQdrantStore(client *platformqdrant.Client, collection string, dim int) *QdrantStore {
 	return &QdrantStore{
 		client:     client.Conn(),
-		collection: cfg.Collection,
+		collection: collection,
+		dim:        dim,
 	}
+}
+
+func (s *QdrantStore) Dimensions() int {
+	return s.dim
 }
 
 func (s *QdrantStore) Upsert(ctx context.Context, points ...Point) error {

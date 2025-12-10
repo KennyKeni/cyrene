@@ -45,7 +45,7 @@ func (s *service) ingestPokemon(ctx context.Context, pokemonID string) error {
 		return fmt.Errorf("pokemon %s has empty embedding text", pokemonID)
 	}
 
-	vectors, err := s.embedService.Embed(ctx, embeddingText)
+	vectors, err := s.embedService.Embed(ctx, s.store.Dimensions(), embeddingText)
 	if err != nil {
 		return fmt.Errorf("embed pokemon: %w", err)
 	}

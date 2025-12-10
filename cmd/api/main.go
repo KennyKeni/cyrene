@@ -12,11 +12,13 @@ import (
 	"time"
 
 	"cyrene/internal/ingest"
+	"cyrene/internal/platform/chatstore"
 	"cyrene/internal/platform/config"
 	"cyrene/internal/platform/genkit"
 	"cyrene/internal/platform/kafka"
 	"cyrene/internal/platform/postgres"
 	"cyrene/internal/platform/qdrant"
+	"cyrene/internal/platform/redis"
 	"cyrene/internal/platform/server"
 	"cyrene/internal/platform/vectorstore"
 	"cyrene/internal/pokemon"
@@ -66,10 +68,19 @@ func main() {
 		log.Fatalf("failed to create genkit clients: %v", err)
 	}
 
+	redisClient, err := redis.New(&cfg.Redis)
+	if err != nil {
+		log.Fatalf("failed to create redis client: %v", err)
+	}
+	defer redisClient.Client.Close()
+
+	chatStore := chatstore.NewChatStore(redisClient, cfg.ChatStore.MaxMessages, time.Duration(cfg.ChatStore.TTLMinutes)*time.Minute)
+
 	// Services
-	vectorStore := vectorstore.NewQdrantStore(qdrantClient, &cfg.Qdrant)
+	vectorStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.Collection, int(cfg.Qdrant.CollectionDim))
+	cacheStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.CacheCollection, int(cfg.Qdrant.CacheCollectionDim))
 	pokemonSvc := pokemon.NewService(cfg.PokemonAPI)
-	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore)
+	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, cacheStore, chatStore)
 	ingestRepo := ingest.NewRepository(pgDB.DB())
 	ingestSvc := ingest.NewService(ragSvc, vectorStore, pokemonSvc, ingestRepo)
 

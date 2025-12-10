@@ -7,6 +7,7 @@ import (
 
 type ChatRequest struct {
 	Message string `json:"message"`
+	User    string `json:"user"`
 }
 
 type ChatResponse struct {
@@ -38,8 +39,12 @@ func (h *Handler) chat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "message is required", http.StatusBadRequest)
 		return
 	}
+	if req.User == "" {
+		http.Error(w, "user is required", http.StatusBadRequest)
+		return
+	}
 
-	response, err := h.service.Chat(r.Context(), req.Message)
+	response, err := h.service.Chat(r.Context(), req.Message, req.User)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

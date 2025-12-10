@@ -1,8 +1,0 @@
-{
-  "id": "4722-3100",
-  "pid": 4722,
-  "reflectionServerUrl": "http://127.0.0.1:3100",
-  "timestamp": "2025-12-09T19_33_47Z",
-  "genkitVersion": "go/1.2.0",
-  "reflectionApiSpecVersion": 1
-}

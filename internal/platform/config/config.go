@@ -18,6 +18,7 @@ type Config struct {
 	Qdrant     QdrantConfig
 	Genkit     GenkitConfig
 	PokemonAPI PokemonAPIConfig
+	ChatStore  ChatStoreConfig
 }
 
 type ServerConfig struct {
@@ -62,11 +63,17 @@ type GenkitConfig struct {
 	AgentURL    string `mapstructure:"AGENT_URL"`
 	AgentAPIKey string `mapstructure:"AGENT_API_KEY"`
 	AgentModel  string `mapstructure:"AGENT_MODEL"`
+	FastModel   string `mapstructure:"FAST_MODEL"`
 }
 
 type PokemonAPIConfig struct {
 	BaseURL string `mapstructure:"POKEMON_BASE_URL"`
 	//APIKey  string `mapstructure:"POKEMON_API_KEY"`
+}
+
+type ChatStoreConfig struct {
+	MaxMessages int `mapstructure:"CHATSTORE_MAX_MESSAGES"`
+	TTLMinutes  int `mapstructure:"CHATSTORE_TTL_MINUTES"`
 }
 
 var cfg Config
@@ -100,7 +107,10 @@ func Load() {
 	viper.SetDefault("AGENT_URL", "https://openrouter.ai/api/v1")
 	viper.SetDefault("EMBED_MODEL", "qwen/qwen3-embedding-8b")
 	viper.SetDefault("AGENT_MODEL", "openai/gpt-oss-120b:exacto")
+	viper.SetDefault("FAST_MODEL", "openai/gpt-oss-120b")
 	//viper.SetDefault("POKEMON_API_KEY", "")
+	viper.SetDefault("CHATSTORE_MAX_MESSAGES", 5)
+	viper.SetDefault("CHATSTORE_TTL_MINUTES", 5)
 
 	if err := viper.ReadInConfig(); err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
@@ -148,9 +158,14 @@ func Load() {
 			AgentURL:    viper.GetString("AGENT_URL"),
 			AgentAPIKey: viper.GetString("AGENT_API_KEY"),
 			AgentModel:  viper.GetString("AGENT_MODEL"),
+			FastModel:   viper.GetString("FAST_MODEL"),
 		},
 		PokemonAPI: PokemonAPIConfig{
 			BaseURL: viper.GetString("POKEMON_BASE_URL"),
+		},
+		ChatStore: ChatStoreConfig{
+			MaxMessages: viper.GetInt("CHATSTORE_MAX_MESSAGES"),
+			TTLMinutes:  viper.GetInt("CHATSTORE_TTL_MINUTES"),
 		},
 	}
 }
@@ -176,3 +191,5 @@ func GetQdrant() *QdrantConfig {
 }
 
 func GetGenkit() *GenkitConfig { return &cfg.Genkit }
+
+func GetChatStore() *ChatStoreConfig { return &cfg.ChatStore }

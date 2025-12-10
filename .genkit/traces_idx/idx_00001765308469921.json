@@ -1,5 +1,0 @@
-{"id":"dfef8970df034a728a1ec03de645af32","type":"util","start":1765308480393.833,"name":"generate","end":1765308486808.4236,"status":0}
-{"id":"2162dfdde61b91ec06d9a3597339e1ea","type":"embedder","start":1765308837743.05,"name":"embed/qwen/qwen3-embedding-8b","end":1765308842644.005,"status":0}
-{"id":"3e60ba20c9619ef3a2e5ec82edcee04f","type":"util","start":1765308842676.142,"name":"generate","end":1765308851081.8364,"status":0}
-{"id":"25a2a1814895ea11deb27651f7cf455a","type":"embedder","start":1765308854236.0288,"name":"embed/qwen/qwen3-embedding-8b","end":1765308883969.1526,"status":1}
-{"id":"076cc3dc627ec53b8805c72728682532","type":"embedder","start":1765308969979.54,"name":"embed/qwen/qwen3-embedding-8b","end":1765308994501.4136,"status":0}

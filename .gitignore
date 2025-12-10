@@ -30,6 +30,7 @@ CLAUDE.md
 # Project build
 main
 *templ.go
+.genkit/
 
 # OS X generated file
 .DS_Store

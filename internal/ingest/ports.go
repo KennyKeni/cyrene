@@ -14,7 +14,7 @@ type Service interface {
 }
 
 type embedService interface {
-	Embed(ctx context.Context, texts ...string) ([][]float32, error)
+	Embed(ctx context.Context, dimensions int, texts ...string) ([][]float32, error)
 }
 
 type pokemonService interface {
@@ -24,6 +24,7 @@ type pokemonService interface {
 type vectorStore interface {
 	Upsert(ctx context.Context, points ...vectorstore.Point) error
 	Delete(ctx context.Context, filter vectorstore.Filter) error
+	Dimensions() int
 }
 
 type Repository interface {
