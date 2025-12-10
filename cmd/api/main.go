@@ -23,7 +23,18 @@ import (
 	"cyrene/internal/platform/vectorstore"
 	"cyrene/internal/pokemon"
 	"cyrene/internal/rag"
+
+	_ "cyrene/docs"
+
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
+
+// @title           Cyrene API
+// @version         1.0
+// @description     RAG Agent for Pokemon data - indexes Pokemon from Kafka events into Qdrant, answers queries using retrieved context.
+
+// @host            localhost:8080
+// @BasePath        /
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -108,6 +119,7 @@ func main() {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.Handle("/ingest/", http.StripPrefix("/ingest", ingestHandler.RegisterRoutes()))
 	mux.Handle("/chat/", http.StripPrefix("/chat", ragHandler.RegisterRoutes()))
+	mux.Handle("GET /swagger/", httpSwagger.Handler())
 
 	// Create server with middleware
 	handler := server.CORSMiddleware(server.TrailingSlashMiddleware(mux))

@@ -1,0 +1,92 @@
+version: '3'
+
+dotenv: ['.env']
+
+env:
+  GOEXPERIMENT: jsonv2
+
+tasks:
+  default:
+    deps: [build, test]
+
+  build:
+    desc: Build the application
+    cmds:
+      - go build -o main cmd/api/main.go
+
+  run:
+    desc: Run the application
+    cmds:
+      - go run cmd/api/main.go
+
+  docker-run:
+    desc: Start Docker containers
+    cmds:
+      - docker compose up --build
+
+  docker-down:
+    desc: Stop Docker containers
+    cmds:
+      - docker compose down
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - go test ./... -v
+
+  itest:
+    desc: Run integration tests
+    deps: [test-env-up, test-migrate]
+    cmds:
+      - defer: { task: test-env-down }
+      - go test ./... -v -tags=integration
+    dotenv: ['.env.test']
+
+  test-env-up:
+    cmds:
+      - docker compose -p cyrene-test --env-file .env.test -f docker-compose.test.yml up -d --wait
+
+  test-env-down:
+    cmds:
+      - docker compose -p cyrene-test --env-file .env.test -f docker-compose.test.yml down
+
+  test-migrate:
+    dotenv: ['.env.test']
+    cmds:
+      - goose -dir migrations postgres "postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE?sslmode=disable" up
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -f main
+
+  migrate-up:
+    desc: Run database migrations
+    cmds:
+      - goose -dir migrations postgres "postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE?sslmode=disable" up
+
+  migrate-down:
+    desc: Rollback database migrations
+    cmds:
+      - goose -dir migrations postgres "postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE?sslmode=disable" down
+
+  jet-gen:
+    desc: Generate Jet models
+    cmds:
+      - jet -dsn="postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE?sslmode=disable" -schema=$DB_SCHEMA -path=./internal/platform/postgres/jet
+
+  watch:
+    desc: Live reload with air
+    cmds:
+      - air
+    preconditions:
+      - sh: command -v air
+        msg: "Install air: go install github.com/air-verse/air@latest"
+
+  swag:
+    desc: Generate Swagger docs
+    cmds:
+      - swag init -g cmd/api/main.go -o docs
+    preconditions:
+      - sh: command -v swag
+        msg: "Install swag: go install github.com/swaggo/swag/cmd/swag@latest"

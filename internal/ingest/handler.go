@@ -29,6 +29,16 @@ func (h *Handler) HandleKafka(ctx context.Context, payload []byte) error {
 	return h.service.Ingest(ctx, event)
 }
 
+// @Summary      Ingest document
+// @Description  Index a Pokemon or Move document into the vector store
+// @Tags         ingest
+// @Accept       json
+// @Produce      json
+// @Param        event  body      IngestionEvent  true  "Ingestion event"
+// @Success      202    {object}  map[string]string
+// @Failure      400    {string}  string  "invalid request body"
+// @Failure      500    {string}  string  "internal server error"
+// @Router       /ingest/ [post]
 func (h *Handler) ingest(w http.ResponseWriter, r *http.Request) {
 	var event IngestionEvent
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {

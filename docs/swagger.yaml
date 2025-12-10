@@ -1,0 +1,100 @@
+basePath: /
+definitions:
+  ingest.DocumentType:
+    enum:
+    - pokemon
+    - move
+    type: string
+    x-enum-varnames:
+    - DocumentTypePokemon
+    - DocumentTypeMove
+  ingest.IngestionEvent:
+    properties:
+      id:
+        type: string
+      type:
+        $ref: '#/definitions/ingest.DocumentType'
+    type: object
+  rag.ChatRequest:
+    properties:
+      message:
+        type: string
+      user:
+        type: string
+    type: object
+  rag.ChatResponse:
+    properties:
+      response:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: RAG Agent for Pokemon data - indexes Pokemon from Kafka events into
+    Qdrant, answers queries using retrieved context.
+  title: Cyrene API
+  version: "1.0"
+paths:
+  /chat/:
+    post:
+      consumes:
+      - application/json
+      description: Query the Pokemon RAG system with a message
+      parameters:
+      - description: Chat request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rag.ChatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rag.ChatResponse'
+        "400":
+          description: invalid request body / message is required / user is required
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Chat with Pokemon knowledge base
+      tags:
+      - chat
+  /ingest/:
+    post:
+      consumes:
+      - application/json
+      description: Index a Pokemon or Move document into the vector store
+      parameters:
+      - description: Ingestion event
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/ingest.IngestionEvent'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Ingest document
+      tags:
+      - ingest
+swagger: "2.0"
