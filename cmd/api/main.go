@@ -66,6 +66,17 @@ func main() {
 	if err := qdrantClient.EnsureCollection(ctx, cfg.Qdrant.Collection, uint64(cfg.Qdrant.CollectionDim)); err != nil {
 		log.Fatalf("failed to ensure qdrant collection: %v", err)
 	}
+	if err := qdrantClient.EnsureIndexes(ctx, cfg.Qdrant.Collection, map[string]qdrant.IndexType{
+		"type":        qdrant.IndexTypeKeyword,
+		"form_id":     qdrant.IndexTypeInteger,
+		"species_id":  qdrant.IndexTypeInteger,
+		"variant_ids": qdrant.IndexTypeInteger,
+		"move_id":     qdrant.IndexTypeKeyword,
+		"ability_id":  qdrant.IndexTypeKeyword,
+		"article_id":  qdrant.IndexTypeKeyword,
+	}); err != nil {
+		log.Fatalf("failed to ensure qdrant indexes: %v", err)
+	}
 	if err := qdrantClient.EnsureCollection(ctx, cfg.Qdrant.CacheCollection, uint64(cfg.Qdrant.CacheCollectionDim)); err != nil {
 		log.Fatalf("failed to ensure qdrant cache collection: %v", err)
 	}

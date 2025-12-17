@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -24,9 +25,19 @@ func (h *Handler) RegisterRoutes() *http.ServeMux {
 func (h *Handler) HandleKafka(ctx context.Context, payload []byte) error {
 	var event IngestionEvent
 	if err := json.Unmarshal(payload, &event); err != nil {
+		slog.Error("failed to unmarshal ingestion event", "error", err)
 		return fmt.Errorf("unmarshal payload: %w", err)
 	}
-	return h.service.Ingest(ctx, event)
+
+	slog.Info("ingestion event received", "type", event.Type, "id", event.ID)
+
+	if err := h.service.Ingest(ctx, event); err != nil {
+		slog.Error("ingestion failed", "type", event.Type, "id", event.ID, "error", err)
+		return err
+	}
+
+	slog.Info("ingestion completed", "type", event.Type, "id", event.ID)
+	return nil
 }
 
 // @Summary      Ingest document

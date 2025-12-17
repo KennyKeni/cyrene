@@ -10,9 +10,25 @@ import (
 
 var ErrNotFound = errors.New("document not found")
 
-const referenceKey = "reference"
-const typeKey = "type"
-const contentKey = "content"
+const (
+	typeKey    = "type"
+	contentKey = "content"
+
+	// Form metadata
+	formIDKey     = "form_id"
+	speciesIDKey  = "species_id"
+	variantIDsKey = "variant_ids"
+	formNameKey   = "form_name"
+
+	// Move metadata
+	moveIDKey = "move_id"
+
+	// Ability metadata
+	abilityIDKey = "ability_id"
+
+	// Article metadata
+	articleIDKey = "article_id"
+)
 
 type Topic string
 
@@ -23,8 +39,12 @@ const (
 type DocumentType string
 
 const (
-	DocumentTypePokemon DocumentType = "pokemon"
-	DocumentTypeMove    DocumentType = "move"
+	DocumentTypeSpecies   DocumentType = "species"
+	DocumentTypeVariation DocumentType = "variation"
+	DocumentTypeForm      DocumentType = "form"
+	DocumentTypeMove      DocumentType = "move"
+	DocumentTypeAbility   DocumentType = "ability"
+	DocumentTypeArticle   DocumentType = "article"
 )
 
 func NewDocumentID(d DocumentType, id string) string {

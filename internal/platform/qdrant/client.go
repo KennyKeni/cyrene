@@ -57,3 +57,43 @@ func (c *Client) EnsureCollection(ctx context.Context, name string, vectorSize u
 	}
 	return nil
 }
+
+type IndexType string
+
+const (
+	IndexTypeKeyword IndexType = "keyword"
+	IndexTypeInteger IndexType = "integer"
+)
+
+func (c *Client) EnsureIndexes(ctx context.Context, collection string, indexes map[string]IndexType) error {
+	for field, indexType := range indexes {
+		var fieldType qdrant.FieldType
+		var params *qdrant.PayloadIndexParams
+
+		switch indexType {
+		case IndexTypeKeyword:
+			fieldType = qdrant.FieldType_FieldTypeKeyword
+		case IndexTypeInteger:
+			fieldType = qdrant.FieldType_FieldTypeInteger
+			params = &qdrant.PayloadIndexParams{
+				IndexParams: &qdrant.PayloadIndexParams_IntegerIndexParams{
+					IntegerIndexParams: &qdrant.IntegerIndexParams{
+						Lookup: qdrant.PtrOf(true),
+						Range:  qdrant.PtrOf(true),
+					},
+				},
+			}
+		}
+
+		_, err := c.conn.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
+			CollectionName:   collection,
+			FieldName:        field,
+			FieldType:        &fieldType,
+			FieldIndexParams: params,
+		})
+		if err != nil {
+			return fmt.Errorf("create index for %s: %w", field, err)
+		}
+	}
+	return nil
+}

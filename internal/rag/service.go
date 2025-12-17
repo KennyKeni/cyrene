@@ -22,8 +22,11 @@ type service struct {
 	vectorStore vectorStore
 	cacheStore  vectorStore
 
-	getPokemonTool ai.Tool
-	searchTool     ai.Tool
+	searchPokemonTool ai.Tool
+	getMoveTool       ai.Tool
+	getAbilityTool    ai.Tool
+	getArticleTool    ai.Tool
+	searchTool        ai.Tool
 }
 
 func NewService(clients *platformgenkit.Clients, pokemon pokemonService, store vectorStore, cacheStore vectorStore, chatStore chatStore) Service {
@@ -117,10 +120,13 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
 		ai.WithPrompt(prompt),
-		ai.WithTools(s.getPokemonTool, s.searchTool),
+		ai.WithTools(s.searchPokemonTool, s.getMoveTool, s.getAbilityTool, s.getArticleTool, s.searchTool),
 	)
 	if err != nil {
 		slog.Error("LLM generation failed", "error", err)
+		if errMsg := err.Error(); strings.Contains(errMsg, "max") || strings.Contains(errMsg, "loop") || strings.Contains(errMsg, "iteration") {
+			return "I wasn't able to find the information after several attempts. Could you try rephrasing your question or being more specific?", nil
+		}
 		return "", err
 	}
 

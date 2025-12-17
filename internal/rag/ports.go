@@ -15,7 +15,13 @@ type Service interface {
 }
 
 type pokemonService interface {
-	GetPokemonByID(ctx context.Context, id string) (*pokemon.Pokemon, error)
+	GetMoveByID(ctx context.Context, id string) (*pokemon.Move, error)
+	SearchMoves(ctx context.Context, query string, limit int) ([]pokemon.MoveSearchResult, error)
+	GetAbilityByID(ctx context.Context, id string) (*pokemon.Ability, error)
+	SearchAbilities(ctx context.Context, query string, limit int) ([]pokemon.AbilitySearchResult, error)
+	GetArticleByID(ctx context.Context, id string) (*pokemon.Article, error)
+	SearchArticles(ctx context.Context, query string, limit int) ([]pokemon.ArticleSearchResult, error)
+	SearchForms(ctx context.Context, params pokemon.FormSearchParams) (*pokemon.FormSearchResponse, error)
 }
 
 type vectorStore interface {

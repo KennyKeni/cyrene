@@ -1,125 +1,352 @@
 package rag
 
 import (
+	"fmt"
+	"strconv"
+
 	"cyrene/internal/platform/vectorstore"
+	"cyrene/internal/pokemon"
 
 	"github.com/firebase/genkit/go/ai"
 	"github.com/firebase/genkit/go/genkit"
 )
 
-type PokemonToolResponse struct {
-	ID             int            `json:"id"`
-	Name           string         `json:"name"`
-	Height         int            `json:"height"`
-	Weight         int            `json:"weight"`
-	BaseExperience int            `json:"base_experience"`
-	Types          []string       `json:"types"`
-	Abilities      []string       `json:"abilities"`
-	Stats          map[string]int `json:"stats"`
-	Moves          []string       `json:"moves"`
+type FormSearchStats struct {
+	HP             int `json:"hp"`
+	Attack         int `json:"attack"`
+	Defense        int `json:"defense"`
+	SpecialAttack  int `json:"specialAttack"`
+	SpecialDefense int `json:"specialDefense"`
+	Speed          int `json:"speed"`
+}
+
+type MoveToolResponse struct {
+	ID          int      `json:"id"`
+	Name        string   `json:"name"`
+	Identifier  string   `json:"identifier"`
+	Type        string   `json:"type"`
+	Category    string   `json:"category"`
+	Power       int      `json:"power"`
+	Accuracy    int      `json:"accuracy"`
+	PP          int      `json:"pp"`
+	Priority    int      `json:"priority"`
+	Target      string   `json:"target"`
+	Effect      string   `json:"effect"`
+	Flags       []string `json:"flags"`
+}
+
+type AbilityToolResponse struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Identifier  string `json:"identifier"`
+	Generation  int    `json:"generation"`
+	Description string `json:"description"`
+}
+
+type ArticleToolResponse struct {
+	ID         int      `json:"id"`
+	Title      string   `json:"title"`
+	Subtitle   string   `json:"subtitle,omitempty"`
+	Body       string   `json:"body"`
+	Identifier string   `json:"identifier"`
+	Categories []string `json:"categories"`
+}
+
+type FormSearchToolInput struct {
+	Query      string   `json:"query,omitempty" jsonschema_description:"Fuzzy search on Pokemon name (e.g., 'char' matches 'Charizard', 'Charmander')"`
+	Types      []string `json:"types,omitempty" jsonschema_description:"Filter by type identifiers (e.g., ['fire', 'flying']). Results must have ALL specified types."`
+	Abilities  []string `json:"abilities,omitempty" jsonschema_description:"Filter by ability identifiers (e.g., ['levitate', 'intimidate']). Results must have ALL specified abilities."`
+	Moves      []string `json:"moves,omitempty" jsonschema_description:"Filter by move identifiers (e.g., ['earthquake', 'fly']). Results must know ALL specified moves."`
+	Generation *int     `json:"generation,omitempty" jsonschema_description:"Filter by generation (1-9)"`
+	MinHP      *int     `json:"minHp,omitempty" jsonschema_description:"Minimum HP stat"`
+	MaxHP      *int     `json:"maxHp,omitempty" jsonschema_description:"Maximum HP stat"`
+	MinAttack  *int     `json:"minAttack,omitempty" jsonschema_description:"Minimum Attack stat"`
+	MaxAttack  *int     `json:"maxAttack,omitempty" jsonschema_description:"Maximum Attack stat"`
+	MinDefense *int     `json:"minDefense,omitempty" jsonschema_description:"Minimum Defense stat"`
+	MaxDefense *int     `json:"maxDefense,omitempty" jsonschema_description:"Maximum Defense stat"`
+	MinSpAtk   *int     `json:"minSpecialAttack,omitempty" jsonschema_description:"Minimum Special Attack stat"`
+	MaxSpAtk   *int     `json:"maxSpecialAttack,omitempty" jsonschema_description:"Maximum Special Attack stat"`
+	MinSpDef   *int     `json:"minSpecialDefense,omitempty" jsonschema_description:"Minimum Special Defense stat"`
+	MaxSpDef   *int     `json:"maxSpecialDefense,omitempty" jsonschema_description:"Maximum Special Defense stat"`
+	MinSpeed   *int     `json:"minSpeed,omitempty" jsonschema_description:"Minimum Speed stat"`
+	MaxSpeed   *int     `json:"maxSpeed,omitempty" jsonschema_description:"Maximum Speed stat"`
+	MinBST     *int     `json:"minBst,omitempty" jsonschema_description:"Minimum Base Stat Total"`
+	MaxBST     *int     `json:"maxBst,omitempty" jsonschema_description:"Maximum Base Stat Total"`
+	Limit      int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 10, max 100)"`
+}
+
+type FormSearchSpecies struct {
+	Name           string `json:"name"`
+	GenderRate     string `json:"genderRate"`
+	CatchRate      int    `json:"catchRate"`
+	GrowthRate     string `json:"growthRate"`
+	BaseFriendship int    `json:"baseFriendship"`
+	EggCycle       int    `json:"eggCycle"`
+	IsBaby         bool   `json:"isBaby"`
+	Classification string `json:"classification"`
+}
+
+type FormSearchToolResult struct {
+	ID         int                `json:"id"`
+	Name       string             `json:"name"`
+	FormName   string             `json:"formName"`
+	Generation int                `json:"generation"`
+	Height     float64            `json:"height"`
+	Weight     float64            `json:"weight"`
+	Species    FormSearchSpecies  `json:"species"`
+	Stats      FormSearchStats    `json:"stats"`
+	Types      []string           `json:"types"`
+	Abilities  []string           `json:"abilities"`
+}
+
+type FormSearchToolResponse struct {
+	Results []FormSearchToolResult `json:"results"`
+	Total   int                    `json:"total"`
 }
 
 func (s *service) registerTools(g *genkit.Genkit) {
-	s.getPokemonTool = s.defineGetPokemonTool(g)
+	s.searchPokemonTool = s.defineSearchPokemonTool(g)
+	s.getMoveTool = s.defineGetMoveTool(g)
+	s.getAbilityTool = s.defineGetAbilityTool(g)
+	s.getArticleTool = s.defineGetArticleTool(g)
 	s.searchTool = s.defineVectorSearchTool(g)
 }
 
-func (s *service) defineGetPokemonTool(g *genkit.Genkit) ai.Tool {
+func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
-		"getPokemon",
-		"Fetches Pokemon data by ID or name. Returns stats, types, abilities, moves, height, and weight.",
-		func(ctx *ai.ToolContext, input struct {
-			ID string `json:"id" jsonschema_description:"Pokemon ID (e.g. '25') or name (e.g. 'pikachu')"`
-		}) (*PokemonToolResponse, error) {
-			p, err := s.pokemon.GetPokemonByID(ctx, input.ID)
+		"searchPokemon",
+		`Search and filter Pokemon forms. Returns form data (stats, types, abilities, height, weight) plus species data (growth rate, gender ratio, catch rate, base friendship, egg cycles, classification, baby status). Filters: name (fuzzy), types, abilities, moves, generation, stat ranges (HP/Atk/Def/SpA/SpD/Spe), BST range.`,
+		func(ctx *ai.ToolContext, input FormSearchToolInput) (*FormSearchToolResponse, error) {
+			limit := input.Limit
+			if limit <= 0 {
+				limit = 10
+			}
+			if limit > 100 {
+				limit = 100
+			}
+
+			params := pokemon.FormSearchParams{
+				Query:             input.Query,
+				Types:             input.Types,
+				Abilities:         input.Abilities,
+				Moves:             input.Moves,
+				Generation:        input.Generation,
+				MinHP:             input.MinHP,
+				MaxHP:             input.MaxHP,
+				MinAttack:         input.MinAttack,
+				MaxAttack:         input.MaxAttack,
+				MinDefense:        input.MinDefense,
+				MaxDefense:        input.MaxDefense,
+				MinSpecialAttack:  input.MinSpAtk,
+				MaxSpecialAttack:  input.MaxSpAtk,
+				MinSpecialDefense: input.MinSpDef,
+				MaxSpecialDefense: input.MaxSpDef,
+				MinSpeed:          input.MinSpeed,
+				MaxSpeed:          input.MaxSpeed,
+				MinBST:            input.MinBST,
+				MaxBST:            input.MaxBST,
+				Include:           []string{"stats", "types", "abilities"},
+				Limit:             limit,
+			}
+
+			resp, err := s.pokemon.SearchForms(ctx, params)
 			if err != nil {
 				return nil, err
 			}
-			return toToolResponse(p.Metadata, p.Identifier), nil
+
+			results := make([]FormSearchToolResult, len(resp.Data))
+			for i, form := range resp.Data {
+				var types []string
+				for _, t := range form.Types {
+					types = append(types, t.Type.Name)
+				}
+
+				var abilities []string
+				for _, a := range form.Abilities {
+					name := a.Ability.Name
+					if a.IsHidden {
+						name += " (Hidden)"
+					}
+					abilities = append(abilities, name)
+				}
+
+				var stats FormSearchStats
+				if form.Stats != nil {
+					stats = FormSearchStats{
+						HP:             form.Stats.HP,
+						Attack:         form.Stats.Attack,
+						Defense:        form.Stats.Defense,
+						SpecialAttack:  form.Stats.SpecialAttack,
+						SpecialDefense: form.Stats.SpecialDefense,
+						Speed:          form.Stats.Speed,
+					}
+				}
+
+				species := FormSearchSpecies{
+					Name:           form.Species.Name,
+					GenderRate:     pokemon.GenderRateDescription(form.Species.GenderRate),
+					CatchRate:      form.Species.CatchRate,
+					GrowthRate:     pokemon.GrowthRateName(form.Species.GrowthRate),
+					BaseFriendship: form.Species.BaseFriendship,
+					EggCycle:       form.Species.EggCycle,
+					IsBaby:         form.Species.IsBaby,
+					Classification: form.Species.Classification.Name,
+				}
+
+				results[i] = FormSearchToolResult{
+					ID:         form.ID,
+					Name:       form.Name,
+					FormName:   form.FormName,
+					Generation: form.Generation,
+					Height:     float64(form.Height) / 10,
+					Weight:     float64(form.Weight) / 10,
+					Species:    species,
+					Stats:      stats,
+					Types:      types,
+					Abilities:  abilities,
+				}
+			}
+
+			return &FormSearchToolResponse{
+				Results: results,
+				Total:   resp.Total,
+			}, nil
 		},
 	)
 }
 
-func toToolResponse(meta map[string]any, name string) *PokemonToolResponse {
-	resp := &PokemonToolResponse{
-		Name:  name,
-		Stats: make(map[string]int),
-	}
-
-	if id, ok := meta["id"].(float64); ok {
-		resp.ID = int(id)
-	}
-	if height, ok := meta["height"].(float64); ok {
-		resp.Height = int(height)
-	}
-	if weight, ok := meta["weight"].(float64); ok {
-		resp.Weight = int(weight)
-	}
-	if exp, ok := meta["base_experience"].(float64); ok {
-		resp.BaseExperience = int(exp)
-	}
-
-	if types, ok := meta["types"].([]any); ok {
-		for _, t := range types {
-			if tm, ok := t.(map[string]any); ok {
-				if typeInfo, ok := tm["type"].(map[string]any); ok {
-					if n, ok := typeInfo["name"].(string); ok {
-						resp.Types = append(resp.Types, n)
-					}
-				}
+func (s *service) defineGetMoveTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"getMove",
+		"Fetches move data by name or ID. Uses fuzzy search to find the move, then returns full details including type, power, accuracy, PP, priority, target, effect, and flags.",
+		func(ctx *ai.ToolContext, input struct {
+			Query string `json:"query" jsonschema_description:"Move name (e.g. 'thunderbolt', 'earthquake') or ID (e.g. '85')"`
+		}) (*MoveToolResponse, error) {
+			results, err := s.pokemon.SearchMoves(ctx, input.Query, 1)
+			if err != nil {
+				return nil, err
 			}
-		}
-	}
-
-	if abilities, ok := meta["abilities"].([]any); ok {
-		for _, a := range abilities {
-			if am, ok := a.(map[string]any); ok {
-				if abilityInfo, ok := am["ability"].(map[string]any); ok {
-					if n, ok := abilityInfo["name"].(string); ok {
-						resp.Abilities = append(resp.Abilities, n)
-					}
-				}
+			if len(results) == 0 {
+				return nil, fmt.Errorf("move not found: %s", input.Query)
 			}
-		}
-	}
 
-	if stats, ok := meta["stats"].([]any); ok {
-		for _, s := range stats {
-			if sm, ok := s.(map[string]any); ok {
-				if statInfo, ok := sm["stat"].(map[string]any); ok {
-					if n, ok := statInfo["name"].(string); ok {
-						if baseStat, ok := sm["base_stat"].(float64); ok {
-							resp.Stats[n] = int(baseStat)
-						}
-					}
-				}
+			move, err := s.pokemon.GetMoveByID(ctx, strconv.Itoa(results[0].ID))
+			if err != nil {
+				return nil, err
 			}
-		}
-	}
 
-	if moves, ok := meta["moves"].([]any); ok {
-		for _, m := range moves {
-			if mm, ok := m.(map[string]any); ok {
-				if moveInfo, ok := mm["move"].(map[string]any); ok {
-					if n, ok := moveInfo["name"].(string); ok {
-						resp.Moves = append(resp.Moves, n)
-					}
-				}
+			var flags []string
+			for _, f := range move.Flags {
+				flags = append(flags, f.Name)
 			}
-		}
-	}
 
-	return resp
+			effect := move.ShortEffect
+			if effect == "" {
+				effect = move.Effect
+			}
+
+			return &MoveToolResponse{
+				ID:         move.ID,
+				Name:       move.Name,
+				Identifier: move.Identifier,
+				Type:       move.Type.Name,
+				Category:   move.MoveDamageClass.Name,
+				Power:      move.Power,
+				Accuracy:   move.Accuracy,
+				PP:         move.PowerPoints,
+				Priority:   move.Priority,
+				Target:     move.MoveTarget.Name,
+				Effect:     effect,
+				Flags:      flags,
+			}, nil
+		},
+	)
+}
+
+func (s *service) defineGetAbilityTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"getAbility",
+		"Fetches ability data by name or ID. Uses fuzzy search to find the ability, then returns full details including name, generation, and description.",
+		func(ctx *ai.ToolContext, input struct {
+			Query string `json:"query" jsonschema_description:"Ability name (e.g. 'static', 'intimidate') or ID (e.g. '9')"`
+		}) (*AbilityToolResponse, error) {
+			results, err := s.pokemon.SearchAbilities(ctx, input.Query, 1)
+			if err != nil {
+				return nil, err
+			}
+			if len(results) == 0 {
+				return nil, fmt.Errorf("ability not found: %s", input.Query)
+			}
+
+			ability, err := s.pokemon.GetAbilityByID(ctx, strconv.Itoa(results[0].ID))
+			if err != nil {
+				return nil, err
+			}
+
+			description := ability.ShortDescription
+			if description == "" {
+				description = ability.Description
+			}
+
+			return &AbilityToolResponse{
+				ID:          ability.ID,
+				Name:        ability.Name,
+				Identifier:  ability.Identifier,
+				Generation:  ability.Generation,
+				Description: description,
+			}, nil
+		},
+	)
+}
+
+func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"getArticle",
+		"Fetches article data by title or ID. Uses fuzzy search to find the article, then returns full details including title, subtitle, body content, and categories.",
+		func(ctx *ai.ToolContext, input struct {
+			Query string `json:"query" jsonschema_description:"Article title (e.g. 'getting started', 'team building') or ID (e.g. '1')"`
+		}) (*ArticleToolResponse, error) {
+			results, err := s.pokemon.SearchArticles(ctx, input.Query, 1)
+			if err != nil {
+				return nil, err
+			}
+			if len(results) == 0 {
+				return nil, fmt.Errorf("article not found: %s", input.Query)
+			}
+
+			article, err := s.pokemon.GetArticleByID(ctx, strconv.Itoa(results[0].ID))
+			if err != nil {
+				return nil, err
+			}
+
+			var categories []string
+			for _, c := range article.Categories {
+				categories = append(categories, c.Category.Name)
+			}
+
+			return &ArticleToolResponse{
+				ID:         article.ID,
+				Title:      article.Title,
+				Subtitle:   article.Subtitle,
+				Body:       article.Body,
+				Identifier: article.Identifier,
+				Categories: categories,
+			}, nil
+		},
+	)
 }
 
 func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
-		"searchPokemon",
-		"Searches the Pokemon database using semantic similarity. Use for exploratory queries like finding Pokemon by type, abilities, characteristics, or conceptual similarities (e.g. 'fast electric Pokemon', 'tanky water types', 'Pokemon that can learn fire moves'). Returns ranked results with relevance scores.",
+		"search",
+		"Searches the database using semantic similarity. Includes Pokemon species, moves, abilities, and articles. Use for exploratory queries like finding Pokemon by characteristics, moves by type or effect, abilities by description, or articles by topic.",
 		func(ctx *ai.ToolContext, input struct {
-			Query string `json:"query" jsonschema_description:"Natural language search query describing the Pokemon you're looking for"`
+			Query string `json:"query" jsonschema_description:"Natural language search query describing what you're looking for"`
 			Limit int    `json:"limit" jsonschema_description:"Max results to return (default 5)"`
 		}) ([]vectorstore.SearchResult, error) {
 			embeddings, err := s.Embed(ctx, s.vectorStore.Dimensions(), input.Query)

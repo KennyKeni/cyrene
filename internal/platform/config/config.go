@@ -42,8 +42,10 @@ type RedisConfig struct {
 }
 
 type KafkaConfig struct {
-	Brokers       []string `mapstructure:"KAFKA_BROKERS"`
-	ConsumerGroup string   `mapstructure:"KAFKA_CONSUMER_GROUP"`
+	Brokers          []string `mapstructure:"KAFKA_BROKERS"`
+	ConsumerGroup    string   `mapstructure:"KAFKA_CONSUMER_GROUP"`
+	MaxRetries       int      `mapstructure:"KAFKA_MAX_RETRIES"`
+	RetryBackoffSecs int      `mapstructure:"KAFKA_RETRY_BACKOFF_SECS"`
 }
 
 type QdrantConfig struct {
@@ -94,7 +96,7 @@ func Load() {
 	viper.SetDefault("REDIS_HOST", "localhost")
 	viper.SetDefault("REDIS_PORT", "6379")
 	viper.SetDefault("REDIS_DB", 0)
-	viper.SetDefault("KAFKA_BROKERS", []string{"localhost:19092"})
+	viper.SetDefault("KAFKA_BROKERS", []string{"localhost:9092"})
 	viper.SetDefault("KAFKA_CONSUMER_GROUP", "cyrene")
 	viper.SetDefault("QDRANT_HOST", "localhost")
 	viper.SetDefault("QDRANT_PORT", 6334)
@@ -108,7 +110,7 @@ func Load() {
 	viper.SetDefault("EMBED_MODEL", "qwen/qwen3-embedding-8b")
 	viper.SetDefault("AGENT_MODEL", "openai/gpt-oss-120b:exacto")
 	viper.SetDefault("FAST_MODEL", "openai/gpt-oss-120b")
-	//viper.SetDefault("POKEMON_API_KEY", "")
+	viper.SetDefault("POKEMON_BASE_URL", "http://localhost:3000")
 	viper.SetDefault("CHATSTORE_MAX_MESSAGES", 5)
 	viper.SetDefault("CHATSTORE_TTL_MINUTES", 5)
 

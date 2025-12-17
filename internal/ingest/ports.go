@@ -18,7 +18,10 @@ type embedService interface {
 }
 
 type pokemonService interface {
-	GetPokemonByID(ctx context.Context, id string) (*pokemon.Pokemon, error)
+	SearchForms(ctx context.Context, params pokemon.FormSearchParams) (*pokemon.FormSearchResponse, error)
+	GetMoveByID(ctx context.Context, id string) (*pokemon.Move, error)
+	GetAbilityByID(ctx context.Context, id string) (*pokemon.Ability, error)
+	GetArticleByID(ctx context.Context, id string) (*pokemon.Article, error)
 }
 
 type vectorStore interface {
