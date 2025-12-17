@@ -1,0 +1,34 @@
+Cyrene
+Copyright (C) 2025 KennyKeni
+
+Cyrene is free software; You can redistribute it and/or modify it under the terms of:
+  - the GNU Affero General Public License version 3 as published by the Free Software Foundation.
+You don't have to do anything special to accept the license and you don't have to notify anyone which that you have made that decision.
+
+Cyrene is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See your chosen license for more details.
+
+You should have received a copy of both licenses along with Cyrene.
+If not, see <http://www.gnu.org/licenses/>.
+
+
+There is a strong belief within us that the license we have chosen provides not only the best solution for providing you with the essential freedom necessary to use Cyrene within your projects, but also for maintaining enough copyleft strength for us to feel confident and secure with releasing our hard work to the public. For your convenience we've included our own interpretation of the license we chose, which can be seen below.
+
+Our interpretation of the GNU Affero General Public License version 3: (Quoted words are words in which there exists a definition within the license to avoid ambiguity.)
+  1. You must always provide the source code, copyright and license information of Cyrene whenever you "convey" any part of Cyrene;
+     be it a verbatim copy or a modified copy.
+  2. Cyrene was developed as a library and has therefore been designed without knowledge of your work; as such the following should be implied:
+     a) Cyrene was developed without knowledge of your work; as such the following should be implied:
+        i)  Cyrene should not fall under a work which is "based on" your work.
+        ii) You should be free to use Cyrene in a work covered by the:
+            - GNU General Public License version 2
+            - GNU Lesser General Public License version 2.1
+            This is due to those licenses classifying Cyrene as a work which would fall under an "aggregate" work by their terms and definitions;
+            as such it should not be covered by their terms and conditions. The relevant passages start at:
+            - Line 129 of the GNU General Public License version 2
+            - Line 206 of the GNU Lesser General Public License version 2.1
+     b) If you have not "modified", "adapted" or "extended" Cyrene then your work should not be bound by this license,
+        as you are using Cyrene under the definition of an "aggregate" work.
+     c) If you have "modified", "adapted" or "extended" Cyrene then any of those modifications/extensions/adaptations which you have made
+        should indeed be bound by this license, as you are using Cyrene under the definition of a "based on" work.

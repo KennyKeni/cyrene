@@ -29,6 +29,7 @@ CLAUDE.md
 
 # Project build
 main
+api
 *templ.go
 .genkit/
 
