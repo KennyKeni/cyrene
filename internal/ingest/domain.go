@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/invopop/jsonschema"
 )
 
 var ErrNotFound = errors.New("document not found")
@@ -36,16 +37,37 @@ const (
 	TopicIngestion Topic = "ingestion"
 )
 
+type EventType string
+
+const (
+	EventTypeSpecies   EventType = "species"
+	EventTypeVariation EventType = "variation"
+	EventTypeForm      EventType = "form"
+	EventTypeMove      EventType = "move"
+	EventTypeAbility   EventType = "ability"
+	EventTypeArticle   EventType = "article"
+)
+
 type DocumentType string
 
 const (
-	DocumentTypeSpecies   DocumentType = "species"
-	DocumentTypeVariation DocumentType = "variation"
-	DocumentTypeForm      DocumentType = "form"
-	DocumentTypeMove      DocumentType = "move"
-	DocumentTypeAbility   DocumentType = "ability"
-	DocumentTypeArticle   DocumentType = "article"
+	DocumentTypeForm    DocumentType = "form"
+	DocumentTypeMove    DocumentType = "move"
+	DocumentTypeAbility DocumentType = "ability"
+	DocumentTypeArticle DocumentType = "article"
 )
+
+func (DocumentType) JSONSchema() *jsonschema.Schema {
+	return &jsonschema.Schema{
+		Type: "string",
+		Enum: []any{
+			string(DocumentTypeForm),
+			string(DocumentTypeMove),
+			string(DocumentTypeAbility),
+			string(DocumentTypeArticle),
+		},
+	}
+}
 
 func NewDocumentID(d DocumentType, id string) string {
 	return fmt.Sprintf("%s_%s", d, id)
@@ -60,6 +82,6 @@ type IngestedDocument struct {
 }
 
 type IngestionEvent struct {
-	Type DocumentType `json:"type"`
-	ID   string       `json:"id"`
+	Type EventType `json:"type"`
+	ID   string    `json:"id"`
 }

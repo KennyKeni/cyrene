@@ -286,6 +286,13 @@ type MoveSearchResult struct {
 	Similarity float64 `json:"similarity"`
 }
 
+type TypeSearchResult struct {
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	Identifier string  `json:"identifier"`
+	Similarity float64 `json:"similarity"`
+}
+
 type Move struct {
 	ID              int             `json:"id"`
 	Name            string          `json:"name"`

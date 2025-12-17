@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"cyrene/internal/ingest"
 	"cyrene/internal/platform/vectorstore"
 	"cyrene/internal/pokemon"
 
@@ -126,11 +127,15 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 				limit = 100
 			}
 
+			types := s.resolveTypes(ctx, input.Types)
+			abilities := s.resolveAbilities(ctx, input.Abilities)
+			moves := s.resolveMoves(ctx, input.Moves)
+
 			params := pokemon.FormSearchParams{
 				Query:             input.Query,
-				Types:             input.Types,
-				Abilities:         input.Abilities,
-				Moves:             input.Moves,
+				Types:             types,
+				Abilities:         abilities,
+				Moves:             moves,
 				Generation:        input.Generation,
 				MinHP:             input.MinHP,
 				MaxHP:             input.MaxHP,
@@ -344,16 +349,31 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"search",
-		"Searches the database using semantic similarity. Includes Pokemon species, moves, abilities, and articles. Use for exploratory queries like finding Pokemon by characteristics, moves by type or effect, abilities by description, or articles by topic.",
+		"Searches the database using semantic similarity. Includes Pokemon forms, moves, abilities, and articles. Use for exploratory queries like finding Pokemon by characteristics, moves by type or effect, abilities by description, or articles by topic. Filter by type to narrow results.",
 		func(ctx *ai.ToolContext, input struct {
-			Query string `json:"query" jsonschema_description:"Natural language search query describing what you're looking for"`
-			Limit int    `json:"limit" jsonschema_description:"Max results to return (default 5)"`
+			Query string                `json:"query" jsonschema_description:"Natural language search query describing what you're looking for"`
+			Types []ingest.DocumentType `json:"types,omitempty" jsonschema_description:"Filter by document type. Must be an array, e.g. [\"form\"] or [\"move\", \"ability\"]"`
+			Limit int                   `json:"limit" jsonschema_description:"Max results to return (default 5)"`
 		}) ([]vectorstore.SearchResult, error) {
 			embeddings, err := s.Embed(ctx, s.vectorStore.Dimensions(), input.Query)
 			if err != nil {
 				return nil, err
 			}
-			return s.vectorStore.Search(ctx, embeddings[0], input.Limit, nil)
+
+			var filter *vectorstore.Filter
+			if len(input.Types) > 0 {
+				filters := make([]vectorstore.StringFilter, len(input.Types))
+				for i, t := range input.Types {
+					filters[i] = vectorstore.StringFilter{
+						Field: "type",
+						Value: string(t),
+						Op:    vectorstore.FilterOR,
+					}
+				}
+				filter = &vectorstore.Filter{StringFilters: filters}
+			}
+
+			return s.vectorStore.Search(ctx, embeddings[0], input.Limit, filter)
 		},
 	)
 }

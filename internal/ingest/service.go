@@ -28,20 +28,20 @@ func NewService(embedService embedService, store vectorStore, pokemonService pok
 
 func (s *service) Ingest(ctx context.Context, event IngestionEvent) error {
 	switch event.Type {
-	case DocumentTypeSpecies:
+	case EventTypeSpecies:
 		return s.ingestSpecies(ctx, event.ID)
-	case DocumentTypeVariation:
+	case EventTypeVariation:
 		return s.ingestVariation(ctx, event.ID)
-	case DocumentTypeForm:
+	case EventTypeForm:
 		return s.ingestForm(ctx, event.ID)
-	case DocumentTypeMove:
+	case EventTypeMove:
 		return s.ingestMove(ctx, event.ID)
-	case DocumentTypeAbility:
+	case EventTypeAbility:
 		return s.ingestAbility(ctx, event.ID)
-	case DocumentTypeArticle:
+	case EventTypeArticle:
 		return s.ingestArticle(ctx, event.ID)
 	default:
-		return fmt.Errorf("unsupported document type: %s", event.Type)
+		return fmt.Errorf("unsupported event type: %s", event.Type)
 	}
 }
 

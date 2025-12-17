@@ -17,6 +17,7 @@ type Service interface {
 type pokemonService interface {
 	GetMoveByID(ctx context.Context, id string) (*pokemon.Move, error)
 	SearchMoves(ctx context.Context, query string, limit int) ([]pokemon.MoveSearchResult, error)
+	SearchTypes(ctx context.Context, query string, limit int) ([]pokemon.TypeSearchResult, error)
 	GetAbilityByID(ctx context.Context, id string) (*pokemon.Ability, error)
 	SearchAbilities(ctx context.Context, query string, limit int) ([]pokemon.AbilitySearchResult, error)
 	GetArticleByID(ctx context.Context, id string) (*pokemon.Article, error)

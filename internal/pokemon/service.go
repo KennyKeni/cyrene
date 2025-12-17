@@ -83,6 +83,26 @@ func (s *Service) SearchMoves(ctx context.Context, query string, limit int) ([]M
 	return results, nil
 }
 
+func (s *Service) SearchTypes(ctx context.Context, query string, limit int) ([]TypeSearchResult, error) {
+	q := url.Values{}
+	q.Set("q", query)
+	if limit > 0 {
+		q.Set("limit", strconv.Itoa(limit))
+	}
+
+	data, err := s.fetch(ctx, "/types/search?"+q.Encode())
+	if err != nil {
+		return nil, fmt.Errorf("search types: %w", err)
+	}
+
+	var results []TypeSearchResult
+	if err := json.Unmarshal(data, &results); err != nil {
+		return nil, fmt.Errorf("decode type search: %w", err)
+	}
+
+	return results, nil
+}
+
 func (s *Service) GetAbilityByID(ctx context.Context, id string) (*Ability, error) {
 	data, err := s.fetch(ctx, fmt.Sprintf("/abilities/%s", id))
 	if err != nil {

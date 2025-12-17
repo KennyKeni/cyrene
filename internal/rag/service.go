@@ -255,3 +255,48 @@ func (s *service) rewritePrompt(ctx context.Context, query string, chatHistory [
 	}
 	return resp, nil
 }
+
+func (s *service) resolveTypes(ctx context.Context, queries []string) []string {
+	if len(queries) == 0 {
+		return nil
+	}
+	resolved := make([]string, 0, len(queries))
+	for _, q := range queries {
+		results, err := s.pokemon.SearchTypes(ctx, q, 1)
+		if err != nil || len(results) == 0 {
+			continue
+		}
+		resolved = append(resolved, results[0].Identifier)
+	}
+	return resolved
+}
+
+func (s *service) resolveAbilities(ctx context.Context, queries []string) []string {
+	if len(queries) == 0 {
+		return nil
+	}
+	resolved := make([]string, 0, len(queries))
+	for _, q := range queries {
+		results, err := s.pokemon.SearchAbilities(ctx, q, 1)
+		if err != nil || len(results) == 0 {
+			continue
+		}
+		resolved = append(resolved, results[0].Identifier)
+	}
+	return resolved
+}
+
+func (s *service) resolveMoves(ctx context.Context, queries []string) []string {
+	if len(queries) == 0 {
+		return nil
+	}
+	resolved := make([]string, 0, len(queries))
+	for _, q := range queries {
+		results, err := s.pokemon.SearchMoves(ctx, q, 1)
+		if err != nil || len(results) == 0 {
+			continue
+		}
+		resolved = append(resolved, results[0].Identifier)
+	}
+	return resolved
+}
