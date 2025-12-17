@@ -12,20 +12,22 @@ import (
 
 type ChatStore struct {
 	client     *platformredis.Client
+	prefix     string
 	maxMessage int
 	ttl        time.Duration
 }
 
-func NewChatStore(client *platformredis.Client, maxMessage int, ttl time.Duration) *ChatStore {
+func NewChatStore(client *platformredis.Client, prefix string, maxMessage int, ttl time.Duration) *ChatStore {
 	return &ChatStore{
 		client:     client,
+		prefix:     prefix,
 		maxMessage: maxMessage,
 		ttl:        ttl,
 	}
 }
 
 func (c *ChatStore) key(user string) string {
-	return fmt.Sprintf("chat:history:%s", user)
+	return fmt.Sprintf("chat:%s:%s", c.prefix, user)
 }
 
 // Technically, I should make my own message type but i cba

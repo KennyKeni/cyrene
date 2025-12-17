@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"cyrene/internal/elysia"
 	"cyrene/internal/ingest"
 	"cyrene/internal/platform/chatstore"
 	"cyrene/internal/platform/config"
@@ -96,19 +97,22 @@ func main() {
 	}
 	defer redisClient.Client.Close()
 
-	chatStore := chatstore.NewChatStore(redisClient, cfg.ChatStore.MaxMessages, time.Duration(cfg.ChatStore.TTLMinutes)*time.Minute)
+	ragChatStore := chatstore.NewChatStore(redisClient, "rag", cfg.ChatStore.MaxMessages, time.Duration(cfg.ChatStore.TTLMinutes)*time.Minute)
+	elysiaChatStore := chatstore.NewChatStore(redisClient, "elysia", cfg.ChatStore.MaxMessages, time.Duration(cfg.ChatStore.TTLMinutes)*time.Minute)
 
 	// Services
 	vectorStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.Collection, int(cfg.Qdrant.CollectionDim))
 	cacheStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.CacheCollection, int(cfg.Qdrant.CacheCollectionDim))
 	pokemonSvc := pokemon.NewService(cfg.PokemonAPI)
-	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, cacheStore, chatStore)
+	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, cacheStore, ragChatStore)
 	ingestRepo := ingest.NewRepository(pgDB.DB())
 	ingestSvc := ingest.NewService(ragSvc, vectorStore, pokemonSvc, ingestRepo)
 
 	// Handlers
 	ingestHandler := ingest.NewHandler(ingestSvc)
 	ragHandler := rag.NewHandler(ragSvc)
+	elysiaSvc := elysia.NewService(genkitClients, elysiaChatStore)
+	elysiaHandler := elysia.NewHandler(elysiaSvc)
 
 	// Kafka consumer
 	consumer, err := kafka.NewConsumer(&cfg.Kafka, map[string]kafka.Handler{
@@ -130,6 +134,7 @@ func main() {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.Handle("/ingest/", http.StripPrefix("/ingest", ingestHandler.RegisterRoutes()))
 	mux.Handle("/chat/", http.StripPrefix("/chat", ragHandler.RegisterRoutes()))
+	mux.Handle("/elysia/", http.StripPrefix("/elysia", elysiaHandler.RegisterRoutes()))
 	mux.Handle("GET /swagger/", httpSwagger.Handler())
 
 	// Create server with middleware
