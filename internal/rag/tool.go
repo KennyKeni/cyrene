@@ -2,6 +2,7 @@ package rag
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"cyrene/internal/ingest"
@@ -128,6 +129,15 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 		"searchPokemon",
 		`Search and filter Pokemon forms. Returns form data (stats, types, abilities, height, weight) plus species data (growth rate, gender ratio, catch rate, base friendship, egg cycles, classification, baby status). Filters: name (fuzzy), types, abilities, moves, generation, stat ranges (HP/Atk/Def/SpA/SpD/Spe), BST range.`,
 		func(ctx *ai.ToolContext, input FormSearchToolInput) (*FormSearchToolResponse, error) {
+			slog.Info("tool searchPokemon",
+				"query", input.Query,
+				"types", input.Types,
+				"abilities", input.Abilities,
+				"moves", input.Moves,
+				"generation", input.Generation,
+				"limit", input.Limit,
+			)
+
 			limit := input.Limit
 			if limit <= 0 {
 				limit = 10
@@ -166,6 +176,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 
 			resp, err := s.pokemon.SearchForms(ctx, params)
 			if err != nil {
+				slog.Error("tool searchPokemon failed", "error", err)
 				return &FormSearchToolResponse{Error: err.Error()}, nil
 			}
 
@@ -222,6 +233,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 				}
 			}
 
+			slog.Info("tool searchPokemon completed", "results", len(results), "total", resp.Total)
 			return &FormSearchToolResponse{
 				Results: results,
 				Total:   resp.Total,
@@ -238,16 +250,21 @@ func (s *service) defineGetMoveTool(g *genkit.Genkit) ai.Tool {
 		func(ctx *ai.ToolContext, input struct {
 			Query string `json:"query" jsonschema_description:"Move name (e.g. 'thunderbolt', 'earthquake') or ID (e.g. '85')"`
 		}) (*MoveToolResponse, error) {
+			slog.Info("tool getMove", "query", input.Query)
+
 			results, err := s.pokemon.SearchMoves(ctx, input.Query, 1)
 			if err != nil {
+				slog.Error("tool getMove search failed", "error", err)
 				return &MoveToolResponse{Error: err.Error()}, nil
 			}
 			if len(results) == 0 {
+				slog.Warn("tool getMove not found", "query", input.Query)
 				return &MoveToolResponse{Error: fmt.Sprintf("move not found: %s", input.Query)}, nil
 			}
 
 			move, err := s.pokemon.GetMoveByID(ctx, strconv.Itoa(results[0].ID))
 			if err != nil {
+				slog.Error("tool getMove fetch failed", "error", err)
 				return &MoveToolResponse{Error: err.Error()}, nil
 			}
 
@@ -261,6 +278,7 @@ func (s *service) defineGetMoveTool(g *genkit.Genkit) ai.Tool {
 				effect = move.Effect
 			}
 
+			slog.Info("tool getMove completed", "id", move.ID, "name", move.Name)
 			return &MoveToolResponse{
 				ID:         move.ID,
 				Name:       move.Name,
@@ -287,16 +305,21 @@ func (s *service) defineGetAbilityTool(g *genkit.Genkit) ai.Tool {
 		func(ctx *ai.ToolContext, input struct {
 			Query string `json:"query" jsonschema_description:"Ability name (e.g. 'static', 'intimidate') or ID (e.g. '9')"`
 		}) (*AbilityToolResponse, error) {
+			slog.Info("tool getAbility", "query", input.Query)
+
 			results, err := s.pokemon.SearchAbilities(ctx, input.Query, 1)
 			if err != nil {
+				slog.Error("tool getAbility search failed", "error", err)
 				return &AbilityToolResponse{Error: err.Error()}, nil
 			}
 			if len(results) == 0 {
+				slog.Warn("tool getAbility not found", "query", input.Query)
 				return &AbilityToolResponse{Error: fmt.Sprintf("ability not found: %s", input.Query)}, nil
 			}
 
 			ability, err := s.pokemon.GetAbilityByID(ctx, strconv.Itoa(results[0].ID))
 			if err != nil {
+				slog.Error("tool getAbility fetch failed", "error", err)
 				return &AbilityToolResponse{Error: err.Error()}, nil
 			}
 
@@ -305,6 +328,7 @@ func (s *service) defineGetAbilityTool(g *genkit.Genkit) ai.Tool {
 				description = ability.Description
 			}
 
+			slog.Info("tool getAbility completed", "id", ability.ID, "name", ability.Name)
 			return &AbilityToolResponse{
 				ID:          ability.ID,
 				Name:        ability.Name,
@@ -324,16 +348,21 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 		func(ctx *ai.ToolContext, input struct {
 			Query string `json:"query" jsonschema_description:"Article title (e.g. 'getting started', 'team building') or ID (e.g. '1')"`
 		}) (*ArticleToolResponse, error) {
+			slog.Info("tool getArticle", "query", input.Query)
+
 			results, err := s.pokemon.SearchArticles(ctx, input.Query, 1)
 			if err != nil {
+				slog.Error("tool getArticle search failed", "error", err)
 				return &ArticleToolResponse{Error: err.Error()}, nil
 			}
 			if len(results) == 0 {
+				slog.Warn("tool getArticle not found", "query", input.Query)
 				return &ArticleToolResponse{Error: fmt.Sprintf("article not found: %s", input.Query)}, nil
 			}
 
 			article, err := s.pokemon.GetArticleByID(ctx, strconv.Itoa(results[0].ID))
 			if err != nil {
+				slog.Error("tool getArticle fetch failed", "error", err)
 				return &ArticleToolResponse{Error: err.Error()}, nil
 			}
 
@@ -342,6 +371,7 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 				categories = append(categories, c.Category.Name)
 			}
 
+			slog.Info("tool getArticle completed", "id", article.ID, "title", article.Title)
 			return &ArticleToolResponse{
 				ID:         article.ID,
 				Title:      article.Title,
@@ -364,8 +394,11 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 			Types []ingest.DocumentType `json:"types,omitempty" jsonschema_description:"Filter by document type. Must be an array, e.g. [\"form\"] or [\"move\", \"ability\"]"`
 			Limit int                   `json:"limit" jsonschema_description:"Max results to return (default 5)"`
 		}) (*SearchToolResponse, error) {
+			slog.Info("tool search", "query", input.Query, "types", input.Types, "limit", input.Limit)
+
 			embeddings, err := s.Embed(ctx, s.vectorStore.Dimensions(), input.Query)
 			if err != nil {
+				slog.Error("tool search embed failed", "error", err)
 				return &SearchToolResponse{Error: err.Error()}, nil
 			}
 
@@ -384,8 +417,11 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 
 			results, err := s.vectorStore.Search(ctx, embeddings[0], input.Limit, filter)
 			if err != nil {
+				slog.Error("tool search failed", "error", err)
 				return &SearchToolResponse{Error: err.Error()}, nil
 			}
+
+			slog.Info("tool search completed", "results", len(results))
 			return &SearchToolResponse{Results: results}, nil
 		},
 	)
