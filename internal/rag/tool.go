@@ -22,35 +22,38 @@ type FormSearchStats struct {
 }
 
 type MoveToolResponse struct {
-	ID          int      `json:"id"`
-	Name        string   `json:"name"`
-	Identifier  string   `json:"identifier"`
-	Type        string   `json:"type"`
-	Category    string   `json:"category"`
-	Power       int      `json:"power"`
-	Accuracy    int      `json:"accuracy"`
-	PP          int      `json:"pp"`
-	Priority    int      `json:"priority"`
-	Target      string   `json:"target"`
-	Effect      string   `json:"effect"`
-	Flags       []string `json:"flags"`
+	ID          int      `json:"id,omitempty"`
+	Name        string   `json:"name,omitempty"`
+	Identifier  string   `json:"identifier,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	Power       int      `json:"power,omitempty"`
+	Accuracy    int      `json:"accuracy,omitempty"`
+	PP          int      `json:"pp,omitempty"`
+	Priority    int      `json:"priority,omitempty"`
+	Target      string   `json:"target,omitempty"`
+	Effect      string   `json:"effect,omitempty"`
+	Flags       []string `json:"flags,omitempty"`
+	Error       string   `json:"error,omitempty"`
 }
 
 type AbilityToolResponse struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Identifier  string `json:"identifier"`
-	Generation  int    `json:"generation"`
-	Description string `json:"description"`
+	ID          int    `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Identifier  string `json:"identifier,omitempty"`
+	Generation  int    `json:"generation,omitempty"`
+	Description string `json:"description,omitempty"`
+	Error       string `json:"error,omitempty"`
 }
 
 type ArticleToolResponse struct {
-	ID         int      `json:"id"`
-	Title      string   `json:"title"`
+	ID         int      `json:"id,omitempty"`
+	Title      string   `json:"title,omitempty"`
 	Subtitle   string   `json:"subtitle,omitempty"`
-	Body       string   `json:"body"`
-	Identifier string   `json:"identifier"`
-	Categories []string `json:"categories"`
+	Body       string   `json:"body,omitempty"`
+	Identifier string   `json:"identifier,omitempty"`
+	Categories []string `json:"categories,omitempty"`
+	Error      string   `json:"error,omitempty"`
 }
 
 type FormSearchToolInput struct {
@@ -101,8 +104,14 @@ type FormSearchToolResult struct {
 }
 
 type FormSearchToolResponse struct {
-	Results []FormSearchToolResult `json:"results"`
-	Total   int                    `json:"total"`
+	Results []FormSearchToolResult `json:"results,omitempty"`
+	Total   int                    `json:"total,omitempty"`
+	Error   string                 `json:"error,omitempty"`
+}
+
+type SearchToolResponse struct {
+	Results []vectorstore.SearchResult `json:"results,omitempty"`
+	Error   string                     `json:"error,omitempty"`
 }
 
 func (s *service) registerTools(g *genkit.Genkit) {
@@ -157,7 +166,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 
 			resp, err := s.pokemon.SearchForms(ctx, params)
 			if err != nil {
-				return nil, err
+				return &FormSearchToolResponse{Error: err.Error()}, nil
 			}
 
 			results := make([]FormSearchToolResult, len(resp.Data))
@@ -231,15 +240,15 @@ func (s *service) defineGetMoveTool(g *genkit.Genkit) ai.Tool {
 		}) (*MoveToolResponse, error) {
 			results, err := s.pokemon.SearchMoves(ctx, input.Query, 1)
 			if err != nil {
-				return nil, err
+				return &MoveToolResponse{Error: err.Error()}, nil
 			}
 			if len(results) == 0 {
-				return nil, fmt.Errorf("move not found: %s", input.Query)
+				return &MoveToolResponse{Error: fmt.Sprintf("move not found: %s", input.Query)}, nil
 			}
 
 			move, err := s.pokemon.GetMoveByID(ctx, strconv.Itoa(results[0].ID))
 			if err != nil {
-				return nil, err
+				return &MoveToolResponse{Error: err.Error()}, nil
 			}
 
 			var flags []string
@@ -280,15 +289,15 @@ func (s *service) defineGetAbilityTool(g *genkit.Genkit) ai.Tool {
 		}) (*AbilityToolResponse, error) {
 			results, err := s.pokemon.SearchAbilities(ctx, input.Query, 1)
 			if err != nil {
-				return nil, err
+				return &AbilityToolResponse{Error: err.Error()}, nil
 			}
 			if len(results) == 0 {
-				return nil, fmt.Errorf("ability not found: %s", input.Query)
+				return &AbilityToolResponse{Error: fmt.Sprintf("ability not found: %s", input.Query)}, nil
 			}
 
 			ability, err := s.pokemon.GetAbilityByID(ctx, strconv.Itoa(results[0].ID))
 			if err != nil {
-				return nil, err
+				return &AbilityToolResponse{Error: err.Error()}, nil
 			}
 
 			description := ability.ShortDescription
@@ -311,21 +320,21 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"getArticle",
-		"Fetches article data by title or ID. Uses fuzzy search to find the article, then returns full details including title, subtitle, body content, and categories.",
+		"Fetches a specific article by exact title or ID. Only use this tool when you already know the exact article title or ID from a previous search result. Do NOT use for exploratory queries - use the search tool instead to discover relevant articles first.",
 		func(ctx *ai.ToolContext, input struct {
 			Query string `json:"query" jsonschema_description:"Article title (e.g. 'getting started', 'team building') or ID (e.g. '1')"`
 		}) (*ArticleToolResponse, error) {
 			results, err := s.pokemon.SearchArticles(ctx, input.Query, 1)
 			if err != nil {
-				return nil, err
+				return &ArticleToolResponse{Error: err.Error()}, nil
 			}
 			if len(results) == 0 {
-				return nil, fmt.Errorf("article not found: %s", input.Query)
+				return &ArticleToolResponse{Error: fmt.Sprintf("article not found: %s", input.Query)}, nil
 			}
 
 			article, err := s.pokemon.GetArticleByID(ctx, strconv.Itoa(results[0].ID))
 			if err != nil {
-				return nil, err
+				return &ArticleToolResponse{Error: err.Error()}, nil
 			}
 
 			var categories []string
@@ -349,15 +358,15 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"search",
-		"Searches the database using semantic similarity. Includes Pokemon forms, moves, abilities, and articles. Use for exploratory queries like finding Pokemon by characteristics, moves by type or effect, abilities by description, or articles by topic. Filter by type to narrow results.",
+		"Semantic search for text-based content. Best for: articles (guides, strategies, game mechanics, tier lists), move effects by concept (e.g. 'moves that cause burn'), and ability effects by description. Use for general knowledge questions or discovering relevant articles. NOT for Pokemon stat/type/ability filtering - use searchPokemon tool instead which has structured filters for accurate queries. Filter by type (move/ability/article) to narrow results.",
 		func(ctx *ai.ToolContext, input struct {
 			Query string                `json:"query" jsonschema_description:"Natural language search query describing what you're looking for"`
 			Types []ingest.DocumentType `json:"types,omitempty" jsonschema_description:"Filter by document type. Must be an array, e.g. [\"form\"] or [\"move\", \"ability\"]"`
 			Limit int                   `json:"limit" jsonschema_description:"Max results to return (default 5)"`
-		}) ([]vectorstore.SearchResult, error) {
+		}) (*SearchToolResponse, error) {
 			embeddings, err := s.Embed(ctx, s.vectorStore.Dimensions(), input.Query)
 			if err != nil {
-				return nil, err
+				return &SearchToolResponse{Error: err.Error()}, nil
 			}
 
 			var filter *vectorstore.Filter
@@ -373,7 +382,11 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 				filter = &vectorstore.Filter{StringFilters: filters}
 			}
 
-			return s.vectorStore.Search(ctx, embeddings[0], input.Limit, filter)
+			results, err := s.vectorStore.Search(ctx, embeddings[0], input.Limit, filter)
+			if err != nil {
+				return &SearchToolResponse{Error: err.Error()}, nil
+			}
+			return &SearchToolResponse{Results: results}, nil
 		},
 	)
 }
