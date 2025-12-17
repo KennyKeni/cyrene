@@ -19,7 +19,7 @@ func New(cfg *config.QdrantConfig) (*Client, error) {
 		Host:   cfg.Host,
 		Port:   cfg.Port,
 		APIKey: cfg.APIKey,
-		UseTLS: cfg.APIKey != "", // Use TLS when API key is provided
+		UseTLS: cfg.UseTLS,
 	})
 	if err != nil {
 		return nil, err
