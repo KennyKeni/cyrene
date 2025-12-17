@@ -22,7 +22,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Addr string
+	Addr   string
+	APIKey string
 }
 
 type DBConfig struct {
@@ -124,7 +125,8 @@ func Load() {
 	cfg = Config{
 		AppEnv: viper.GetString("APP_ENV"),
 		Server: ServerConfig{
-			Addr: fmt.Sprintf(":%d", viper.GetInt("PORT")),
+			Addr:   fmt.Sprintf(":%d", viper.GetInt("PORT")),
+			APIKey: viper.GetString("API_KEY"),
 		},
 		DB: DBConfig{
 			Host:     viper.GetString("DB_HOST"),

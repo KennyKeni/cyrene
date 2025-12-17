@@ -133,7 +133,9 @@ func main() {
 	mux.Handle("GET /swagger/", httpSwagger.Handler())
 
 	// Create server with middleware
-	handler := server.CORSMiddleware(server.TrailingSlashMiddleware(mux))
+	handler := server.CORSMiddleware(
+		server.APIKeyMiddleware(cfg.Server.APIKey)(
+			server.TrailingSlashMiddleware(mux)))
 	srv := server.New(cfg, handler)
 
 	// Graceful shutdown
