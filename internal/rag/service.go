@@ -147,6 +147,97 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 	return answer, nil
 }
 
+func (s *service) ChatStream(ctx context.Context, prompt string, user string, onChunk func(string) error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("chat stream panic recovered", "panic", r)
+			err = fmt.Errorf("internal error: %v", r)
+		}
+	}()
+
+	slog.Info("chat stream request", "prompt", prompt)
+
+	chatHistory, err := s.chatStore.Get(ctx, user)
+	if err != nil {
+		slog.Warn("Unable to retrieve chat history", "error", err)
+	}
+
+	newPrompt, err := s.rewritePrompt(ctx, prompt, chatHistory)
+	if err != nil {
+		return err
+	}
+	if newPrompt.Rejected {
+		slog.Info("prompt rejected", "reason", newPrompt.Reason)
+		return onChunk(fmt.Sprintf("I am unable to answer you: %s", newPrompt.Reason))
+	}
+
+	if len(chatHistory) == 0 {
+		prompt = newPrompt.Prompt
+	}
+
+	embeddings, err := s.Embed(ctx, s.cacheStore.Dimensions(), newPrompt.Prompt)
+	if err != nil {
+		slog.Error("failed to embed prompt", "error", err)
+		return err
+	}
+	embedding := embeddings[0]
+
+	if cached, err := s.findCachedAnswer(ctx, prompt, embedding); err == nil && cached != nil {
+		slog.Info("cache hit (stream)", "cached_question", cached.Question)
+		if err := s.chatStore.Append(ctx, user,
+			ai.NewUserTextMessage(prompt),
+			ai.NewModelTextMessage(cached.Answer),
+		); err != nil {
+			slog.Warn("failed to append chat history", "error", err)
+		}
+		return onChunk(cached.Answer)
+	}
+	slog.Info("cache miss, streaming from LLM")
+
+	var answer strings.Builder
+	resp, err := genkit.Generate(ctx, s.clients.Genkit,
+		ai.WithModel(s.clients.Model),
+		ai.WithSystem(systemPrompt),
+		ai.WithPrompt(prompt),
+		ai.WithTools(s.searchPokemonTool, s.getMoveTool, s.getAbilityTool, s.getArticleTool, s.searchTool),
+		ai.WithStreaming(func(ctx context.Context, chunk *ai.ModelResponseChunk) error {
+			text := chunk.Text()
+			if text != "" {
+				answer.WriteString(text)
+				return onChunk(text)
+			}
+			return nil
+		}),
+	)
+	if err != nil {
+		slog.Error("LLM streaming failed", "error", err)
+		if errMsg := err.Error(); strings.Contains(errMsg, "max") || strings.Contains(errMsg, "loop") || strings.Contains(errMsg, "iteration") {
+			return onChunk("I wasn't able to find the information after several attempts. Could you try rephrasing your question or being more specific?")
+		}
+		return err
+	}
+
+	fullAnswer := resp.Text()
+	if fullAnswer == "" {
+		fullAnswer = answer.String()
+	}
+
+	if err := s.storeCachedAnswer(ctx, newPrompt.Prompt, embedding, fullAnswer); err != nil {
+		slog.Warn("failed to cache answer", "error", err)
+	} else {
+		slog.Info("cached answer stored")
+	}
+
+	if err := s.chatStore.Append(ctx, user,
+		ai.NewUserTextMessage(prompt),
+		ai.NewModelTextMessage(fullAnswer),
+	); err != nil {
+		slog.Warn("failed to append chat history", "error", err)
+	}
+
+	return nil
+}
+
 func (s *service) findCachedAnswer(ctx context.Context, query string, embedding []float32) (*CachedAnswer, error) {
 	filter := &vectorstore.Filter{
 		StringFilters: []vectorstore.StringFilter{

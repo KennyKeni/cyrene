@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	Chat(ctx context.Context, prompt string, user string) (string, error)
+	ChatStream(ctx context.Context, prompt string, user string, onChunk func(string) error) error
 	Embed(ctx context.Context, dimensions int, texts ...string) ([][]float32, error)
 }
 
