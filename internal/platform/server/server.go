@@ -13,7 +13,7 @@ func New(cfg *config.Config, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:         cfg.Server.Addr,
 		Handler:      handler,
-		IdleTimeout:  time.Minute,
+		IdleTimeout:  2 * time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
