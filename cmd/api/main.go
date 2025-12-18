@@ -131,7 +131,7 @@ func main() {
 	// Build routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", handleHello)
-	mux.HandleFunc("GET /health", handleHealth)
+	mux.HandleFunc("GET /health/", handleHealth)
 	mux.Handle("/ingest/", http.StripPrefix("/ingest", ingestHandler.RegisterRoutes()))
 	mux.Handle("/chat/", http.StripPrefix("/chat", ragHandler.RegisterRoutes()))
 	mux.Handle("/elysia/", http.StripPrefix("/elysia", elysiaHandler.RegisterRoutes()))

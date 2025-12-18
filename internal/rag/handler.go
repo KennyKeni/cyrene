@@ -26,7 +26,7 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) RegisterRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /", h.chat)
-	mux.HandleFunc("POST /stream", h.chatStream)
+	mux.HandleFunc("POST /stream/", h.chatStream)
 	return mux
 }
 
