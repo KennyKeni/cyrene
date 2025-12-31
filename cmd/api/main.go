@@ -78,9 +78,6 @@ func main() {
 	}); err != nil {
 		log.Fatalf("failed to ensure qdrant indexes: %v", err)
 	}
-	if err := qdrantClient.EnsureCollection(ctx, cfg.Qdrant.CacheCollection, uint64(cfg.Qdrant.CacheCollectionDim)); err != nil {
-		log.Fatalf("failed to ensure qdrant cache collection: %v", err)
-	}
 
 	if err := kafka.EnsureTopics(ctx, cfg.Kafka.Brokers, []string{string(ingest.TopicIngestion)}); err != nil {
 		log.Fatalf("failed to ensure kafka topics: %v", err)
@@ -102,9 +99,8 @@ func main() {
 
 	// Services
 	vectorStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.Collection, int(cfg.Qdrant.CollectionDim))
-	cacheStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.CacheCollection, int(cfg.Qdrant.CacheCollectionDim))
 	pokemonSvc := pokemon.NewService(cfg.PokemonAPI)
-	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, cacheStore, ragChatStore, cfg.Qdrant.CacheEnabled)
+	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, ragChatStore)
 	ingestRepo := ingest.NewRepository(pgDB.DB())
 	ingestSvc := ingest.NewService(ragSvc, vectorStore, pokemonSvc, ingestRepo)
 

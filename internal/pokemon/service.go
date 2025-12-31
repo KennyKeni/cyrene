@@ -264,6 +264,9 @@ func (s *Service) SearchItems(ctx context.Context, params AgentItemParams) (*Pag
 	if params.IncludeTags {
 		q.Set("includeTags", "true")
 	}
+	if params.IncludeRecipes {
+		q.Set("includeRecipes", "true")
+	}
 	if params.Limit > 0 {
 		q.Set("limit", strconv.Itoa(params.Limit))
 	}

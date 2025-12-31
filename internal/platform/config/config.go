@@ -50,15 +50,12 @@ type KafkaConfig struct {
 }
 
 type QdrantConfig struct {
-	Host               string `mapstructure:"QDRANT_HOST"`
-	Port               int    `mapstructure:"QDRANT_PORT"`
-	APIKey             string `mapstructure:"QDRANT_API_KEY"`
-	UseTLS             bool   `mapstructure:"QDRANT_USE_TLS"`
-	Collection         string `mapstructure:"QDRANT_COLLECTION"`
-	CollectionDim      uint   `mapstructure:"QDRANT_COLLECTION_DIM"`
-	CacheCollection    string `mapstructure:"QDRANT_CACHE_COLLECTION"`
-	CacheCollectionDim uint   `mapstructure:"QDRANT_CACHE_COLLECTION_DIM"`
-	CacheEnabled       bool   `mapstructure:"QDRANT_CACHE_ENABLED"`
+	Host          string `mapstructure:"QDRANT_HOST"`
+	Port          int    `mapstructure:"QDRANT_PORT"`
+	APIKey        string `mapstructure:"QDRANT_API_KEY"`
+	UseTLS        bool   `mapstructure:"QDRANT_USE_TLS"`
+	Collection    string `mapstructure:"QDRANT_COLLECTION"`
+	CollectionDim uint   `mapstructure:"QDRANT_COLLECTION_DIM"`
 }
 
 type GenkitConfig struct {
@@ -107,9 +104,6 @@ func Load() {
 	viper.SetDefault("QDRANT_USE_TLS", false)
 	viper.SetDefault("QDRANT_COLLECTION", "cobblemon")
 	viper.SetDefault("QDRANT_COLLECTION_DIM", 4096)
-	viper.SetDefault("QDRANT_CACHE_COLLECTION", "cache")
-	viper.SetDefault("QDRANT_CACHE_COLLECTION_DIM", 1024)
-	viper.SetDefault("QDRANT_CACHE_ENABLED", true)
 	viper.SetDefault("EMBED_URL", "https://openrouter.ai/api/v1/embeddings")
 	viper.SetDefault("AGENT_URL", "https://openrouter.ai/api/v1")
 	viper.SetDefault("EMBED_MODEL", "qwen/qwen3-embedding-8b")
@@ -151,15 +145,12 @@ func Load() {
 			ConsumerGroup: viper.GetString("KAFKA_CONSUMER_GROUP"),
 		},
 		Qdrant: QdrantConfig{
-			Host:               viper.GetString("QDRANT_HOST"),
-			Port:               viper.GetInt("QDRANT_PORT"),
-			APIKey:             viper.GetString("QDRANT_API_KEY"),
-			UseTLS:             viper.GetBool("QDRANT_USE_TLS"),
-			Collection:         viper.GetString("QDRANT_COLLECTION"),
-			CollectionDim:      viper.GetUint("QDRANT_COLLECTION_DIM"),
-			CacheCollection:    viper.GetString("QDRANT_CACHE_COLLECTION"),
-			CacheCollectionDim: viper.GetUint("QDRANT_CACHE_COLLECTION_DIM"),
-			CacheEnabled:       viper.GetBool("QDRANT_CACHE_ENABLED"),
+			Host:          viper.GetString("QDRANT_HOST"),
+			Port:          viper.GetInt("QDRANT_PORT"),
+			APIKey:        viper.GetString("QDRANT_API_KEY"),
+			UseTLS:        viper.GetBool("QDRANT_USE_TLS"),
+			Collection:    viper.GetString("QDRANT_COLLECTION"),
+			CollectionDim: viper.GetUint("QDRANT_COLLECTION_DIM"),
 		},
 		Genkit: GenkitConfig{
 			EmbedURL:    viper.GetString("EMBED_URL"),

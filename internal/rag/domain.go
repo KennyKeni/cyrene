@@ -1,26 +1,5 @@
 package rag
 
-import "time"
-
-const (
-	cacheScoreThreshold          = float32(0.75)
-	cacheHeuristicScoreThreshold = float32(0.98)
-	cacheTopN                    = 5
-	cacheAnswerMaxLen            = 200
-	payloadTypeCache             = "qa_cache"
-)
-
-type CachedAnswer struct {
-	Question  string
-	Answer    string
-	CreatedAt time.Time
-}
-
-type cacheValidation struct {
-	MatchIndex int    `json:"match_index"`
-	Reason     string `json:"reason"`
-}
-
 type rewriteResult struct {
 	Prompt   string `json:"prompt"`   // rewritten standalone query (empty if rejected)
 	Rejected bool   `json:"rejected"` // true if off-topic/inappropriate

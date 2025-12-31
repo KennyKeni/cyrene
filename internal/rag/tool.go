@@ -236,6 +236,7 @@ func (s *service) defineSearchItemsTool(g *genkit.Genkit) ai.Tool {
 			IncludeDescription bool     `json:"includeDescription,omitempty" jsonschema_description:"Include item description text."`
 			IncludeBoosts      bool     `json:"includeBoosts,omitempty" jsonschema_description:"Include stat boost information."`
 			IncludeTags        bool     `json:"includeTags,omitempty" jsonschema_description:"Include item tags."`
+			IncludeRecipes     bool     `json:"includeRecipes,omitempty" jsonschema_description:"Include crafting recipes that produce this item."`
 			Limit              int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset             int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
 		}) (*pokemon.PaginatedResponse[pokemon.AgentItem], error) {
@@ -255,6 +256,7 @@ func (s *service) defineSearchItemsTool(g *genkit.Genkit) ai.Tool {
 				IncludeDescription: input.IncludeDescription,
 				IncludeBoosts:      input.IncludeBoosts,
 				IncludeTags:        input.IncludeTags,
+				IncludeRecipes:     input.IncludeRecipes,
 				Limit:              limit,
 				Offset:             input.Offset,
 			}

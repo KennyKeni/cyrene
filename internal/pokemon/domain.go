@@ -200,17 +200,39 @@ type AgentAbility struct {
 }
 
 type AgentItem struct {
-	Name      string           `json:"name"`
-	Slug      string           `json:"slug"`
-	ShortDesc *string          `json:"shortDesc,omitempty"`
-	Desc      *string          `json:"desc,omitempty"`
-	Boosts    []AgentItemBoost `json:"boosts,omitempty"`
-	Tags      []string         `json:"tags,omitempty"`
+	Name      string            `json:"name"`
+	Slug      string            `json:"slug"`
+	ShortDesc *string           `json:"shortDesc,omitempty"`
+	Desc      *string           `json:"desc,omitempty"`
+	Boosts    []AgentItemBoost  `json:"boosts,omitempty"`
+	Tags      []string          `json:"tags,omitempty"`
+	Recipes   []AgentItemRecipe `json:"recipes,omitempty"`
 }
 
 type AgentItemBoost struct {
 	Stat   string `json:"stat"`
 	Stages int    `json:"stages"`
+}
+
+type AgentItemRecipe struct {
+	Type        string                    `json:"type"`
+	ResultCount int                       `json:"resultCount"`
+	Experience  *float64                  `json:"experience,omitempty"`
+	CookingTime *int                      `json:"cookingTime,omitempty"`
+	Inputs      []AgentItemRecipeInput    `json:"inputs"`
+	TagInputs   []AgentItemRecipeTagInput `json:"tagInputs"`
+}
+
+type AgentItemRecipeInput struct {
+	Item     string  `json:"item"`
+	Slot     *int    `json:"slot"`
+	SlotType *string `json:"slotType,omitempty"`
+}
+
+type AgentItemRecipeTagInput struct {
+	Tag      string  `json:"tag"`
+	Slot     *int    `json:"slot"`
+	SlotType *string `json:"slotType,omitempty"`
 }
 
 type AgentArticleSearch struct {
@@ -293,6 +315,7 @@ type AgentItemParams struct {
 	IncludeDescription bool
 	IncludeBoosts      bool
 	IncludeTags        bool
+	IncludeRecipes     bool
 	Limit              int
 	Offset             int
 }

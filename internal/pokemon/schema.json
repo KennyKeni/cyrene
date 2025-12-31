@@ -24041,6 +24041,15 @@
             "required": false
           },
           {
+            "description": "Include crafting recipes that produce this item",
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "includeRecipes",
+            "required": false
+          },
+          {
             "description": "Max results to return (1-100, default 5)",
             "schema": {
               "type": "number",
@@ -24134,6 +24143,135 @@
                             "type": "array",
                             "items": {
                               "type": "string"
+                            }
+                          },
+                          "recipes": {
+                            "description": "Crafting recipes that produce this item",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "description": "Recipe type (e.g., \"crafting\", \"smelting\", \"cooking\")",
+                                  "type": "string"
+                                },
+                                "resultCount": {
+                                  "description": "Number of items produced",
+                                  "type": "number"
+                                },
+                                "experience": {
+                                  "nullable": true,
+                                  "anyOf": [
+                                    {
+                                      "description": "Experience gained",
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "cookingTime": {
+                                  "nullable": true,
+                                  "anyOf": [
+                                    {
+                                      "description": "Cooking time in ticks",
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "inputs": {
+                                  "description": "Item inputs",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "item": {
+                                        "description": "Input item name",
+                                        "type": "string"
+                                      },
+                                      "slot": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot position (for shaped recipes)",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "slotType": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot type name (e.g., \"top\", \"bottom\")",
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "item",
+                                      "slot"
+                                    ]
+                                  }
+                                },
+                                "tagInputs": {
+                                  "description": "Tag-based inputs",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "tag": {
+                                        "description": "Input tag name (matches any item with this tag)",
+                                        "type": "string"
+                                      },
+                                      "slot": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot position (for shaped recipes)",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "slotType": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot type name",
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "tag",
+                                      "slot"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "resultCount",
+                                "inputs",
+                                "tagInputs"
+                              ]
                             }
                           }
                         },
@@ -24232,6 +24370,135 @@
                             "items": {
                               "type": "string"
                             }
+                          },
+                          "recipes": {
+                            "description": "Crafting recipes that produce this item",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "description": "Recipe type (e.g., \"crafting\", \"smelting\", \"cooking\")",
+                                  "type": "string"
+                                },
+                                "resultCount": {
+                                  "description": "Number of items produced",
+                                  "type": "number"
+                                },
+                                "experience": {
+                                  "nullable": true,
+                                  "anyOf": [
+                                    {
+                                      "description": "Experience gained",
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "cookingTime": {
+                                  "nullable": true,
+                                  "anyOf": [
+                                    {
+                                      "description": "Cooking time in ticks",
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "inputs": {
+                                  "description": "Item inputs",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "item": {
+                                        "description": "Input item name",
+                                        "type": "string"
+                                      },
+                                      "slot": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot position (for shaped recipes)",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "slotType": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot type name (e.g., \"top\", \"bottom\")",
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "item",
+                                      "slot"
+                                    ]
+                                  }
+                                },
+                                "tagInputs": {
+                                  "description": "Tag-based inputs",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "tag": {
+                                        "description": "Input tag name (matches any item with this tag)",
+                                        "type": "string"
+                                      },
+                                      "slot": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot position (for shaped recipes)",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "slotType": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot type name",
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "tag",
+                                      "slot"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "resultCount",
+                                "inputs",
+                                "tagInputs"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -24328,6 +24595,135 @@
                             "type": "array",
                             "items": {
                               "type": "string"
+                            }
+                          },
+                          "recipes": {
+                            "description": "Crafting recipes that produce this item",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "description": "Recipe type (e.g., \"crafting\", \"smelting\", \"cooking\")",
+                                  "type": "string"
+                                },
+                                "resultCount": {
+                                  "description": "Number of items produced",
+                                  "type": "number"
+                                },
+                                "experience": {
+                                  "nullable": true,
+                                  "anyOf": [
+                                    {
+                                      "description": "Experience gained",
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "cookingTime": {
+                                  "nullable": true,
+                                  "anyOf": [
+                                    {
+                                      "description": "Cooking time in ticks",
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "inputs": {
+                                  "description": "Item inputs",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "item": {
+                                        "description": "Input item name",
+                                        "type": "string"
+                                      },
+                                      "slot": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot position (for shaped recipes)",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "slotType": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot type name (e.g., \"top\", \"bottom\")",
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "item",
+                                      "slot"
+                                    ]
+                                  }
+                                },
+                                "tagInputs": {
+                                  "description": "Tag-based inputs",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "tag": {
+                                        "description": "Input tag name (matches any item with this tag)",
+                                        "type": "string"
+                                      },
+                                      "slot": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot position (for shaped recipes)",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "slotType": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Slot type name",
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "tag",
+                                      "slot"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "resultCount",
+                                "inputs",
+                                "tagInputs"
+                              ]
                             }
                           }
                         },
