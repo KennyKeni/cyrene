@@ -13,27 +13,28 @@ type PaginatedResponse[T any] struct {
 }
 
 type AgentPokemon struct {
-	Name            string              `json:"name"`
-	Slug            string              `json:"slug"`
-	SpeciesName     string              `json:"speciesName"`
-	Description     *string             `json:"description,omitempty"`
-	Generation      int                 `json:"generation,omitempty"`
-	Stats           *AgentStats         `json:"stats,omitempty"`
-	EvYield         *AgentEvYield       `json:"evYield,omitempty"`
-	Physical        *AgentPhysical      `json:"physical,omitempty"`
-	Types           []string            `json:"types,omitempty"`
+	Name            string                `json:"name"`
+	Slug            string                `json:"slug"`
+	SpeciesName     string                `json:"speciesName"`
+	Description     *string               `json:"description,omitempty"`
+	Generation      int                   `json:"generation,omitempty"`
+	Stats           *AgentStats           `json:"stats,omitempty"`
+	EvYield         *AgentEvYield         `json:"evYield,omitempty"`
+	Physical        *AgentPhysical        `json:"physical,omitempty"`
+	Types           []string              `json:"types,omitempty"`
 	Abilities       []AgentPokemonAbility `json:"abilities,omitempty"`
-	Moves           []AgentPokemonMove  `json:"moves,omitempty"`
-	Drops           []AgentDrop         `json:"drops,omitempty"`
-	Breeding        *AgentBreeding      `json:"breeding,omitempty"`
-	EggGroups       []string            `json:"eggGroups,omitempty"`
-	ExperienceGroup *string             `json:"experienceGroup,omitempty"`
-	Labels          []string            `json:"labels,omitempty"`
-	Cosmetics       *AgentCosmetics     `json:"cosmetics,omitempty"`
-	Hitbox          *AgentHitbox        `json:"hitbox,omitempty"`
-	Lighting        *AgentLighting      `json:"lighting,omitempty"`
-	Riding          *AgentRiding        `json:"riding,omitempty"`
-	Behaviour       *AgentBehaviour     `json:"behaviour,omitempty"`
+	Moves           []AgentPokemonMove    `json:"moves,omitempty"`
+	Drops           []AgentDrop           `json:"drops,omitempty"`
+	Breeding        *AgentBreeding        `json:"breeding,omitempty"`
+	EggGroups       []string              `json:"eggGroups,omitempty"`
+	ExperienceGroup *string               `json:"experienceGroup,omitempty"`
+	Labels          []string              `json:"labels,omitempty"`
+	Cosmetics       *AgentCosmetics       `json:"cosmetics,omitempty"`
+	Hitbox          *AgentHitbox          `json:"hitbox,omitempty"`
+	Lighting        *AgentLighting        `json:"lighting,omitempty"`
+	Riding          *AgentRiding          `json:"riding,omitempty"`
+	Behaviour       *AgentBehaviour       `json:"behaviour,omitempty"`
+	Spawns          []AgentSpawn          `json:"spawns,omitempty"`
 }
 
 type AgentStats struct {
@@ -106,6 +107,50 @@ type AgentRiding struct {
 
 type AgentBehaviour struct {
 	Data any `json:"data"`
+}
+
+type AgentSpawn struct {
+	Bucket       string                `json:"bucket"`
+	PositionType string                `json:"positionType"`
+	Weight       float64               `json:"weight"`
+	LevelMin     int                   `json:"levelMin"`
+	LevelMax     int                   `json:"levelMax"`
+	Presets      []string              `json:"presets"`
+	Conditions   []AgentSpawnCondition `json:"conditions"`
+}
+
+type AgentSpawnCondition struct {
+	Type       string             `json:"type"`
+	Multiplier *float64           `json:"multiplier"`
+	Biomes     []string           `json:"biomes"`
+	BiomeTags  []string           `json:"biomeTags"`
+	TimeRanges []string           `json:"timeRanges"`
+	MoonPhases []string           `json:"moonPhases"`
+	Weather    *AgentSpawnWeather `json:"weather"`
+	Sky        *AgentSpawnSky     `json:"sky"`
+	Position   *AgentSpawnPos     `json:"position"`
+	Lure       *AgentSpawnLure    `json:"lure"`
+}
+
+type AgentSpawnWeather struct {
+	IsRaining    *bool `json:"isRaining"`
+	IsThundering *bool `json:"isThundering"`
+}
+
+type AgentSpawnSky struct {
+	CanSeeSky   *bool `json:"canSeeSky"`
+	MinSkyLight *int  `json:"minSkyLight"`
+	MaxSkyLight *int  `json:"maxSkyLight"`
+}
+
+type AgentSpawnPos struct {
+	MinY *int `json:"minY"`
+	MaxY *int `json:"maxY"`
+}
+
+type AgentSpawnLure struct {
+	MinLureLevel *int `json:"minLureLevel"`
+	MaxLureLevel *int `json:"maxLureLevel"`
 }
 
 type AgentMove struct {
