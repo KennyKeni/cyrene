@@ -399,6 +399,28 @@
           },
           {
             "schema": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "in": "query",
+            "name": "dropItemIds",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "in": "query",
+            "name": "dropItemSlugs",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "number"
             },
             "in": "query",
@@ -19960,6 +19982,18 @@
             },
             "in": "query",
             "name": "labels",
+            "required": false
+          },
+          {
+            "description": "Filter by dropped item names (e.g., \"oran berry\", \"potion\"). Returns Pokemon that drop any matching item",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "in": "query",
+            "name": "dropsItems",
             "required": false
           },
           {

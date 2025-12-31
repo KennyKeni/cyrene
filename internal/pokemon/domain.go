@@ -264,6 +264,7 @@ type AgentPokemonParams struct {
 	Moves              []string
 	EggGroups          []string
 	Labels             []string
+	DropsItems         []string
 	Generation         []int
 	IncludeDescription bool
 	IncludeGeneration  bool

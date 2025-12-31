@@ -68,6 +68,9 @@ func (s *Service) SearchPokemon(ctx context.Context, params AgentPokemonParams) 
 	for _, l := range params.Labels {
 		q.Add("labels", l)
 	}
+	for _, d := range params.DropsItems {
+		q.Add("dropsItems", d)
+	}
 	for _, g := range params.Generation {
 		q.Add("generation", strconv.Itoa(g))
 	}

@@ -98,6 +98,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 			Moves              []string `json:"moves,omitempty" jsonschema_description:"Filter by move names (e.g., ['thunderbolt']). Returns Pokemon that can learn any matching move."`
 			EggGroups          []string `json:"eggGroups,omitempty" jsonschema_description:"Filter by egg group names (e.g., ['dragon', 'monster'])."`
 			Labels             []string `json:"labels,omitempty" jsonschema_description:"Filter by labels (e.g., ['legendary', 'starter'])."`
+			DropsItems         []string `json:"dropsItems,omitempty" jsonschema_description:"Filter by dropped item names (e.g., ['oran berry', 'potion']). Returns Pokemon that drop any matching item."`
 			Generation         []int    `json:"generation,omitempty" jsonschema_description:"Filter by generation numbers (e.g., [1, 2, 3])."`
 			IncludeDescription bool     `json:"includeDescription,omitempty" jsonschema_description:"Include Pokemon description/flavor text."`
 			IncludeGeneration  bool     `json:"includeGeneration,omitempty" jsonschema_description:"Include generation number."`
@@ -128,6 +129,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 				"moves", input.Moves,
 				"eggGroups", input.EggGroups,
 				"labels", input.Labels,
+				"dropsItems", input.DropsItems,
 				"generation", input.Generation,
 				"limit", input.Limit,
 				"offset", input.Offset,
@@ -148,6 +150,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 				Moves:              input.Moves,
 				EggGroups:          input.EggGroups,
 				Labels:             input.Labels,
+				DropsItems:         input.DropsItems,
 				Generation:         input.Generation,
 				IncludeDescription: input.IncludeDescription,
 				IncludeGeneration:  input.IncludeGeneration,
