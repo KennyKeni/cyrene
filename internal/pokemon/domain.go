@@ -121,36 +121,36 @@ type AgentSpawn struct {
 
 type AgentSpawnCondition struct {
 	Type       string             `json:"type"`
-	Multiplier *float64           `json:"multiplier"`
-	Biomes     []string           `json:"biomes"`
-	BiomeTags  []string           `json:"biomeTags"`
-	TimeRanges []string           `json:"timeRanges"`
-	MoonPhases []string           `json:"moonPhases"`
-	Weather    *AgentSpawnWeather `json:"weather"`
-	Sky        *AgentSpawnSky     `json:"sky"`
-	Position   *AgentSpawnPos     `json:"position"`
-	Lure       *AgentSpawnLure    `json:"lure"`
+	Multiplier *float64           `json:"multiplier,omitempty"`
+	Biomes     []string           `json:"biomes,omitempty"`
+	BiomeTags  []string           `json:"biomeTags,omitempty"`
+	TimeRanges []string           `json:"timeRanges,omitempty"`
+	MoonPhases []string           `json:"moonPhases,omitempty"`
+	Weather    *AgentSpawnWeather `json:"weather,omitempty"`
+	Sky        *AgentSpawnSky     `json:"sky,omitempty"`
+	Position   *AgentSpawnPos     `json:"position,omitempty"`
+	Lure       *AgentSpawnLure    `json:"lure,omitempty"`
 }
 
 type AgentSpawnWeather struct {
-	IsRaining    *bool `json:"isRaining"`
-	IsThundering *bool `json:"isThundering"`
+	IsRaining    *bool `json:"isRaining,omitempty"`
+	IsThundering *bool `json:"isThundering,omitempty"`
 }
 
 type AgentSpawnSky struct {
-	CanSeeSky   *bool `json:"canSeeSky"`
-	MinSkyLight *int  `json:"minSkyLight"`
-	MaxSkyLight *int  `json:"maxSkyLight"`
+	CanSeeSky   *bool `json:"canSeeSky,omitempty"`
+	MinSkyLight *int  `json:"minSkyLight,omitempty"`
+	MaxSkyLight *int  `json:"maxSkyLight,omitempty"`
 }
 
 type AgentSpawnPos struct {
-	MinY *int `json:"minY"`
-	MaxY *int `json:"maxY"`
+	MinY *int `json:"minY,omitempty"`
+	MaxY *int `json:"maxY,omitempty"`
 }
 
 type AgentSpawnLure struct {
-	MinLureLevel *int `json:"minLureLevel"`
-	MaxLureLevel *int `json:"maxLureLevel"`
+	MinLureLevel *int `json:"minLureLevel,omitempty"`
+	MaxLureLevel *int `json:"maxLureLevel,omitempty"`
 }
 
 type AgentMove struct {
