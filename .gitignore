@@ -37,6 +37,5 @@ api
 .DS_Store
 
 # misc
-entrypoint.sh
 TODO.md
 
