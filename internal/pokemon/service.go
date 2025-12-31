@@ -126,6 +126,9 @@ func (s *Service) SearchPokemon(ctx context.Context, params AgentPokemonParams) 
 	if params.IncludeBehaviour {
 		q.Set("includeBehaviour", "true")
 	}
+	if params.IncludeSpawns {
+		q.Set("includeSpawns", "true")
+	}
 	if params.Limit > 0 {
 		q.Set("limit", strconv.Itoa(params.Limit))
 	}

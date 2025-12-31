@@ -123,12 +123,17 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 	}
 	slog.Info("cache miss, calling LLM")
 
-	resp, err := genkit.Generate(ctx, s.clients.Genkit,
+	generateOpts := []ai.GenerateOption{
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
-		ai.WithPrompt(prompt),
 		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.searchArticlesTool, s.getArticleTool, s.searchTool),
-	)
+	}
+	if !s.cacheEnabled && len(chatHistory) > 0 {
+		generateOpts = append(generateOpts, ai.WithMessages(chatHistory...))
+	}
+	generateOpts = append(generateOpts, ai.WithPrompt(prompt))
+
+	resp, err := genkit.Generate(ctx, s.clients.Genkit, generateOpts...)
 	if err != nil {
 		slog.Error("LLM generation failed", "error", err)
 		if errMsg := err.Error(); strings.Contains(errMsg, "max") || strings.Contains(errMsg, "loop") || strings.Contains(errMsg, "iteration") {
@@ -207,10 +212,9 @@ func (s *service) ChatStream(ctx context.Context, prompt string, user string, on
 	slog.Info("cache miss, streaming from LLM")
 
 	var answer strings.Builder
-	resp, err := genkit.Generate(ctx, s.clients.Genkit,
+	generateOpts := []ai.GenerateOption{
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
-		ai.WithPrompt(prompt),
 		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.searchArticlesTool, s.getArticleTool, s.searchTool),
 		ai.WithStreaming(func(ctx context.Context, chunk *ai.ModelResponseChunk) error {
 			text := chunk.Text()
@@ -220,7 +224,13 @@ func (s *service) ChatStream(ctx context.Context, prompt string, user string, on
 			}
 			return nil
 		}),
-	)
+	}
+	if !s.cacheEnabled && len(chatHistory) > 0 {
+		generateOpts = append(generateOpts, ai.WithMessages(chatHistory...))
+	}
+	generateOpts = append(generateOpts, ai.WithPrompt(prompt))
+
+	resp, err := genkit.Generate(ctx, s.clients.Genkit, generateOpts...)
 	if err != nil {
 		slog.Error("LLM streaming failed", "error", err)
 		if errMsg := err.Error(); strings.Contains(errMsg, "max") || strings.Contains(errMsg, "loop") || strings.Contains(errMsg, "iteration") {
