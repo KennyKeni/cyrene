@@ -73,10 +73,10 @@ type AgentPokemonMove struct {
 }
 
 type AgentDrop struct {
-	Item        string `json:"item"`
-	Chance      int    `json:"chance,omitempty"`
-	QuantityMin int    `json:"quantityMin,omitempty"`
-	QuantityMax int    `json:"quantityMax,omitempty"`
+	Item        string  `json:"item"`
+	Chance      float64 `json:"chance,omitempty"`
+	QuantityMin float64 `json:"quantityMin,omitempty"`
+	QuantityMax float64 `json:"quantityMax,omitempty"`
 }
 
 type AgentBreeding struct {
@@ -179,7 +179,7 @@ type AgentMoveBoost struct {
 
 type AgentMoveEffect struct {
 	Effect    string  `json:"effect"`
-	Chance    int     `json:"chance"`
+	Chance    float64 `json:"chance"`
 	IsSelf    bool    `json:"isSelf"`
 	Condition *string `json:"condition,omitempty"`
 }
