@@ -1,6 +1,7 @@
 package rag
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -12,9 +13,67 @@ import (
 	"github.com/firebase/genkit/go/genkit"
 )
 
+const maxResponseBytes = 50000
+
+func checkResponseSize(v any) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Errorf("failed to marshal response: %w", err)
+	}
+	if len(data) > maxResponseBytes {
+		return fmt.Errorf("response too large (%d bytes, max %d), narrow your search or reduce included fields", len(data), maxResponseBytes)
+	}
+	return nil
+}
+
 type SearchToolResponse struct {
 	Results []vectorstore.SearchResult `json:"results,omitempty"`
 	Error   string                     `json:"error,omitempty"`
+}
+
+type PokemonToolResponse struct {
+	Results []pokemon.AgentPokemon `json:"results,omitempty"`
+	Total   int                    `json:"total,omitempty"`
+	Limit   int                    `json:"limit,omitempty"`
+	Offset  int                    `json:"offset,omitempty"`
+	Error   string                 `json:"error,omitempty"`
+}
+
+type MoveToolResponse struct {
+	Results []pokemon.AgentMove `json:"results,omitempty"`
+	Total   int                 `json:"total,omitempty"`
+	Limit   int                 `json:"limit,omitempty"`
+	Offset  int                 `json:"offset,omitempty"`
+	Error   string              `json:"error,omitempty"`
+}
+
+type AbilityToolResponse struct {
+	Results []pokemon.AgentAbility `json:"results,omitempty"`
+	Total   int                    `json:"total,omitempty"`
+	Limit   int                    `json:"limit,omitempty"`
+	Offset  int                    `json:"offset,omitempty"`
+	Error   string                 `json:"error,omitempty"`
+}
+
+type ItemToolResponse struct {
+	Results []pokemon.AgentItem `json:"results,omitempty"`
+	Total   int                 `json:"total,omitempty"`
+	Limit   int                 `json:"limit,omitempty"`
+	Offset  int                 `json:"offset,omitempty"`
+	Error   string              `json:"error,omitempty"`
+}
+
+type ArticleSearchToolResponse struct {
+	Results []pokemon.AgentArticleSearch `json:"results,omitempty"`
+	Total   int                          `json:"total,omitempty"`
+	Limit   int                          `json:"limit,omitempty"`
+	Offset  int                          `json:"offset,omitempty"`
+	Error   string                       `json:"error,omitempty"`
+}
+
+type ArticleToolResponse struct {
+	Article *pokemon.AgentArticle `json:"article,omitempty"`
+	Error   string                `json:"error,omitempty"`
 }
 
 func (s *service) registerTools(g *genkit.Genkit) {
@@ -61,7 +120,7 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 			IncludeSpawns      bool     `json:"includeSpawns,omitempty" jsonschema_description:"Include spawn location and condition data."`
 			Limit              int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset             int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
-		}) (*pokemon.PaginatedResponse[pokemon.AgentPokemon], error) {
+		}) (*PokemonToolResponse, error) {
 			slog.Info("tool searchPokemon",
 				"names", input.Names,
 				"types", input.Types,
@@ -116,11 +175,20 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 			resp, err := s.pokemon.SearchPokemon(ctx, params)
 			if err != nil {
 				slog.Error("tool searchPokemon failed", "error", err)
-				return nil, err
+				return &PokemonToolResponse{Error: err.Error()}, nil
 			}
 
 			slog.Info("tool searchPokemon completed", "results", len(resp.Results), "total", resp.Total)
-			return resp, nil
+			result := &PokemonToolResponse{
+				Results: resp.Results,
+				Total:   resp.Total,
+				Limit:   resp.Limit,
+				Offset:  resp.Offset,
+			}
+			if err := checkResponseSize(result); err != nil {
+				return &PokemonToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
@@ -141,7 +209,7 @@ func (s *service) defineSearchMovesTool(g *genkit.Genkit) ai.Tool {
 			IncludeZData       bool     `json:"includeZData,omitempty" jsonschema_description:"Include Z-Move data."`
 			Limit              int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset             int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
-		}) (*pokemon.PaginatedResponse[pokemon.AgentMove], error) {
+		}) (*MoveToolResponse, error) {
 			slog.Info("tool searchMoves",
 				"names", input.Names,
 				"types", input.Types,
@@ -174,11 +242,20 @@ func (s *service) defineSearchMovesTool(g *genkit.Genkit) ai.Tool {
 			resp, err := s.pokemon.SearchMoves(ctx, params)
 			if err != nil {
 				slog.Error("tool searchMoves failed", "error", err)
-				return nil, err
+				return &MoveToolResponse{Error: err.Error()}, nil
 			}
 
 			slog.Info("tool searchMoves completed", "results", len(resp.Results), "total", resp.Total)
-			return resp, nil
+			result := &MoveToolResponse{
+				Results: resp.Results,
+				Total:   resp.Total,
+				Limit:   resp.Limit,
+				Offset:  resp.Offset,
+			}
+			if err := checkResponseSize(result); err != nil {
+				return &MoveToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
@@ -194,7 +271,7 @@ func (s *service) defineSearchAbilitiesTool(g *genkit.Genkit) ai.Tool {
 			IncludeFlags       bool     `json:"includeFlags,omitempty" jsonschema_description:"Include ability flags."`
 			Limit              int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset             int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
-		}) (*pokemon.PaginatedResponse[pokemon.AgentAbility], error) {
+		}) (*AbilityToolResponse, error) {
 			slog.Info("tool searchAbilities", "names", input.Names, "limit", input.Limit, "offset", input.Offset)
 
 			limit := input.Limit
@@ -216,11 +293,20 @@ func (s *service) defineSearchAbilitiesTool(g *genkit.Genkit) ai.Tool {
 			resp, err := s.pokemon.SearchAbilities(ctx, params)
 			if err != nil {
 				slog.Error("tool searchAbilities failed", "error", err)
-				return nil, err
+				return &AbilityToolResponse{Error: err.Error()}, nil
 			}
 
 			slog.Info("tool searchAbilities completed", "results", len(resp.Results), "total", resp.Total)
-			return resp, nil
+			result := &AbilityToolResponse{
+				Results: resp.Results,
+				Total:   resp.Total,
+				Limit:   resp.Limit,
+				Offset:  resp.Offset,
+			}
+			if err := checkResponseSize(result); err != nil {
+				return &AbilityToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
@@ -236,10 +322,10 @@ func (s *service) defineSearchItemsTool(g *genkit.Genkit) ai.Tool {
 			IncludeDescription bool     `json:"includeDescription,omitempty" jsonschema_description:"Include item description text."`
 			IncludeBoosts      bool     `json:"includeBoosts,omitempty" jsonschema_description:"Include stat boost information."`
 			IncludeTags        bool     `json:"includeTags,omitempty" jsonschema_description:"Include item tags."`
-			IncludeRecipes     bool     `json:"includeRecipes,omitempty" jsonschema_description:"Include crafting recipes that produce this item."`
+			IncludeRecipes     bool     `json:"includeRecipes,omitempty" jsonschema_description:"Include crafting recipes that produce this item. Recipes contain inputs with slot positions (0-8 for 3x3 crafting grid, left-to-right, top-to-bottom) and slotType indicating input role: input (smelting/stonecutting), template (smithing), base (smithing armor), addition (smithing material)."`
 			Limit              int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset             int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
-		}) (*pokemon.PaginatedResponse[pokemon.AgentItem], error) {
+		}) (*ItemToolResponse, error) {
 			slog.Info("tool searchItems", "names", input.Names, "tags", input.Tags, "limit", input.Limit, "offset", input.Offset)
 
 			limit := input.Limit
@@ -264,11 +350,20 @@ func (s *service) defineSearchItemsTool(g *genkit.Genkit) ai.Tool {
 			resp, err := s.pokemon.SearchItems(ctx, params)
 			if err != nil {
 				slog.Error("tool searchItems failed", "error", err)
-				return nil, err
+				return &ItemToolResponse{Error: err.Error()}, nil
 			}
 
 			slog.Info("tool searchItems completed", "results", len(resp.Results), "total", resp.Total)
-			return resp, nil
+			result := &ItemToolResponse{
+				Results: resp.Results,
+				Total:   resp.Total,
+				Limit:   resp.Limit,
+				Offset:  resp.Offset,
+			}
+			if err := checkResponseSize(result); err != nil {
+				return &ItemToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
@@ -285,7 +380,7 @@ func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
 			IncludeCategories bool     `json:"includeCategories,omitempty" jsonschema_description:"Include article categories."`
 			Limit             int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset            int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
-		}) (*pokemon.PaginatedResponse[pokemon.AgentArticleSearch], error) {
+		}) (*ArticleSearchToolResponse, error) {
 			slog.Info("tool searchArticles", "titles", input.Titles, "categories", input.Categories, "limit", input.Limit, "offset", input.Offset)
 
 			limit := input.Limit
@@ -308,11 +403,20 @@ func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
 			resp, err := s.pokemon.SearchArticles(ctx, params)
 			if err != nil {
 				slog.Error("tool searchArticles failed", "error", err)
-				return nil, err
+				return &ArticleSearchToolResponse{Error: err.Error()}, nil
 			}
 
 			slog.Info("tool searchArticles completed", "results", len(resp.Results), "total", resp.Total)
-			return resp, nil
+			result := &ArticleSearchToolResponse{
+				Results: resp.Results,
+				Total:   resp.Total,
+				Limit:   resp.Limit,
+				Offset:  resp.Offset,
+			}
+			if err := checkResponseSize(result); err != nil {
+				return &ArticleSearchToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
@@ -324,21 +428,25 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 		`Fetch a specific article by its slug. Use this after searchArticles to get the full article body.`,
 		func(ctx *ai.ToolContext, input struct {
 			Slug string `json:"slug" jsonschema_description:"Article slug from search results (e.g., 'getting-started', 'breeding-guide')"`
-		}) (*pokemon.AgentArticle, error) {
+		}) (*ArticleToolResponse, error) {
 			slog.Info("tool getArticle", "slug", input.Slug)
 
 			if input.Slug == "" {
-				return nil, fmt.Errorf("slug is required")
+				return &ArticleToolResponse{Error: "slug is required"}, nil
 			}
 
 			article, err := s.pokemon.GetArticleBySlug(ctx, input.Slug)
 			if err != nil {
 				slog.Error("tool getArticle failed", "error", err)
-				return nil, err
+				return &ArticleToolResponse{Error: err.Error()}, nil
 			}
 
 			slog.Info("tool getArticle completed", "title", article.Title)
-			return article, nil
+			result := &ArticleToolResponse{Article: article}
+			if err := checkResponseSize(result); err != nil {
+				return &ArticleToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
@@ -350,7 +458,7 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 		"Semantic search for text-based content. Best for: articles (guides, strategies, game mechanics, tier lists), move effects by concept (e.g. 'moves that cause burn'), and ability effects by description. Use for general knowledge questions or discovering relevant articles. NOT for Pokemon stat/type/ability filtering - use searchPokemon tool instead which has structured filters for accurate queries. Filter by type (move/ability/article) to narrow results.",
 		func(ctx *ai.ToolContext, input struct {
 			Query string                `json:"query" jsonschema_description:"Natural language search query describing what you're looking for"`
-			Types []ingest.DocumentType `json:"types,omitempty" jsonschema_description:"Filter by document type. Must be an array, e.g. [\"form\"] or [\"move\", \"ability\"]"`
+			Types []ingest.DocumentType `json:"types,omitempty" jsonschema_description:"Filter by document type: form (Pokemon data), move, ability, item, article. Must be an array, e.g. [\"form\"] or [\"move\", \"ability\"]."`
 			Limit int                   `json:"limit" jsonschema_description:"Max results to return (default 5)"`
 		}) (*SearchToolResponse, error) {
 			slog.Info("tool search", "query", input.Query, "types", input.Types, "limit", input.Limit)
@@ -381,7 +489,11 @@ func (s *service) defineVectorSearchTool(g *genkit.Genkit) ai.Tool {
 			}
 
 			slog.Info("tool search completed", "results", len(results))
-			return &SearchToolResponse{Results: results}, nil
+			result := &SearchToolResponse{Results: results}
+			if err := checkResponseSize(result); err != nil {
+				return &SearchToolResponse{Error: err.Error()}, nil
+			}
+			return result, nil
 		},
 	)
 }
