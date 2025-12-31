@@ -36,3 +36,7 @@ api
 # OS X generated file
 .DS_Store
 
+# misc
+entrypoint.sh
+TODO.md
+

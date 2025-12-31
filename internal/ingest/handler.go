@@ -29,22 +29,22 @@ func (h *Handler) HandleKafka(ctx context.Context, payload []byte) error {
 		return fmt.Errorf("unmarshal payload: %w", err)
 	}
 
-	slog.Info("ingestion event received", "type", event.Type, "id", event.ID)
+	slog.Info("ingestion event received", "entityType", event.EntityType, "entityId", event.EntityID, "operation", event.Operation)
 
 	if err := h.service.Ingest(ctx, event); err != nil {
-		slog.Error("ingestion failed", "type", event.Type, "id", event.ID, "error", err)
+		slog.Error("ingestion failed", "entityType", event.EntityType, "entityId", event.EntityID, "operation", event.Operation, "error", err)
 		return err
 	}
 
-	slog.Info("ingestion completed", "type", event.Type, "id", event.ID)
+	slog.Info("ingestion completed", "entityType", event.EntityType, "entityId", event.EntityID, "operation", event.Operation)
 	return nil
 }
 
 // @Summary      Ingest document
 // @Description  Index a Pokemon or Move document into the vector store
 // @Tags         ingest
-// @Accept       json
-// @Produce      json
+// @Accept       JSON
+// @Produce      JSON
 // @Param        event  body      IngestionEvent  true  "Ingestion event"
 // @Success      202    {object}  map[string]string
 // @Failure      400    {string}  string  "invalid request body"

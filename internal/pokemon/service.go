@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"cyrene/internal/platform/config"
 )
@@ -48,8 +47,345 @@ func (s *Service) fetch(ctx context.Context, path string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func (s *Service) GetMoveByID(ctx context.Context, id string) (*Move, error) {
-	data, err := s.fetch(ctx, fmt.Sprintf("/moves/%s", id))
+func (s *Service) SearchPokemon(ctx context.Context, params AgentPokemonParams) (*PaginatedResponse[AgentPokemon], error) {
+	q := url.Values{}
+
+	for _, name := range params.Names {
+		q.Add("names", name)
+	}
+	for _, t := range params.Types {
+		q.Add("types", t)
+	}
+	for _, a := range params.Abilities {
+		q.Add("abilities", a)
+	}
+	for _, m := range params.Moves {
+		q.Add("moves", m)
+	}
+	for _, eg := range params.EggGroups {
+		q.Add("eggGroups", eg)
+	}
+	for _, l := range params.Labels {
+		q.Add("labels", l)
+	}
+	for _, g := range params.Generation {
+		q.Add("generation", strconv.Itoa(g))
+	}
+
+	if params.IncludeDescription {
+		q.Set("includeDescription", "true")
+	}
+	if params.IncludeGeneration {
+		q.Set("includeGeneration", "true")
+	}
+	if params.IncludeStats {
+		q.Set("includeStats", "true")
+	}
+	if params.IncludeEvYield {
+		q.Set("includeEvYield", "true")
+	}
+	if params.IncludePhysical {
+		q.Set("includePhysical", "true")
+	}
+	if params.IncludeTypes {
+		q.Set("includeTypes", "true")
+	}
+	if params.IncludeAbilities {
+		q.Set("includeAbilities", "true")
+	}
+	if params.IncludeMoves {
+		q.Set("includeMoves", "true")
+	}
+	if params.IncludeDrops {
+		q.Set("includeDrops", "true")
+	}
+	if params.IncludeBreeding {
+		q.Set("includeBreeding", "true")
+	}
+	if params.IncludeEggGroups {
+		q.Set("includeEggGroups", "true")
+	}
+	if params.IncludeExpGroup {
+		q.Set("includeExperienceGroup", "true")
+	}
+	if params.IncludeLabels {
+		q.Set("includeLabels", "true")
+	}
+	if params.IncludeAspects {
+		q.Set("includeAspects", "true")
+	}
+	if params.IncludeHitboxes {
+		q.Set("includeHitboxes", "true")
+	}
+	if params.IncludeLighting {
+		q.Set("includeLighting", "true")
+	}
+	if params.IncludeRiding {
+		q.Set("includeRiding", "true")
+	}
+	if params.IncludeBehaviour {
+		q.Set("includeBehaviour", "true")
+	}
+	if params.Limit > 0 {
+		q.Set("limit", strconv.Itoa(params.Limit))
+	}
+	if params.Offset > 0 {
+		q.Set("offset", strconv.Itoa(params.Offset))
+	}
+
+	path := "/agent/pokemon"
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("search pokemon: %w", err)
+	}
+
+	var resp PaginatedResponse[AgentPokemon]
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("decode pokemon response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (s *Service) SearchMoves(ctx context.Context, params AgentMoveParams) (*PaginatedResponse[AgentMove], error) {
+	q := url.Values{}
+
+	for _, name := range params.Names {
+		q.Add("names", name)
+	}
+	for _, t := range params.Types {
+		q.Add("types", t)
+	}
+	for _, c := range params.Categories {
+		q.Add("categories", c)
+	}
+
+	if params.IncludeDescription {
+		q.Set("includeDescription", "true")
+	}
+	if params.IncludeFlags {
+		q.Set("includeFlags", "true")
+	}
+	if params.IncludeBoosts {
+		q.Set("includeBoosts", "true")
+	}
+	if params.IncludeEffects {
+		q.Set("includeEffects", "true")
+	}
+	if params.IncludeZData {
+		q.Set("includeZData", "true")
+	}
+	if params.Limit > 0 {
+		q.Set("limit", strconv.Itoa(params.Limit))
+	}
+	if params.Offset > 0 {
+		q.Set("offset", strconv.Itoa(params.Offset))
+	}
+
+	path := "/agent/moves"
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("search moves: %w", err)
+	}
+
+	var resp PaginatedResponse[AgentMove]
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("decode moves response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (s *Service) SearchAbilities(ctx context.Context, params AgentAbilityParams) (*PaginatedResponse[AgentAbility], error) {
+	q := url.Values{}
+
+	for _, name := range params.Names {
+		q.Add("names", name)
+	}
+
+	if params.IncludeDescription {
+		q.Set("includeDescription", "true")
+	}
+	if params.IncludeFlags {
+		q.Set("includeFlags", "true")
+	}
+	if params.Limit > 0 {
+		q.Set("limit", strconv.Itoa(params.Limit))
+	}
+	if params.Offset > 0 {
+		q.Set("offset", strconv.Itoa(params.Offset))
+	}
+
+	path := "/agent/abilities"
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("search abilities: %w", err)
+	}
+
+	var resp PaginatedResponse[AgentAbility]
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("decode abilities response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (s *Service) SearchItems(ctx context.Context, params AgentItemParams) (*PaginatedResponse[AgentItem], error) {
+	q := url.Values{}
+
+	for _, name := range params.Names {
+		q.Add("names", name)
+	}
+	for _, tag := range params.Tags {
+		q.Add("tags", tag)
+	}
+
+	if params.IncludeDescription {
+		q.Set("includeDescription", "true")
+	}
+	if params.IncludeBoosts {
+		q.Set("includeBoosts", "true")
+	}
+	if params.IncludeTags {
+		q.Set("includeTags", "true")
+	}
+	if params.Limit > 0 {
+		q.Set("limit", strconv.Itoa(params.Limit))
+	}
+	if params.Offset > 0 {
+		q.Set("offset", strconv.Itoa(params.Offset))
+	}
+
+	path := "/agent/items"
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("search items: %w", err)
+	}
+
+	var resp PaginatedResponse[AgentItem]
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("decode items response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (s *Service) SearchArticles(ctx context.Context, params AgentArticleParams) (*PaginatedResponse[AgentArticleSearch], error) {
+	q := url.Values{}
+
+	for _, title := range params.Titles {
+		q.Add("titles", title)
+	}
+	for _, cat := range params.Categories {
+		q.Add("categories", cat)
+	}
+
+	if params.IncludeBody {
+		q.Set("includeBody", "true")
+	}
+	if params.IncludeCategories {
+		q.Set("includeCategories", "true")
+	}
+	if params.Limit > 0 {
+		q.Set("limit", strconv.Itoa(params.Limit))
+	}
+	if params.Offset > 0 {
+		q.Set("offset", strconv.Itoa(params.Offset))
+	}
+
+	path := "/agent/articles"
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("search articles: %w", err)
+	}
+
+	var resp PaginatedResponse[AgentArticleSearch]
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("decode articles response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (s *Service) GetArticleBySlug(ctx context.Context, slug string) (*AgentArticle, error) {
+	data, err := s.fetch(ctx, fmt.Sprintf("/agent/article/%s", slug))
+	if err != nil {
+		return nil, fmt.Errorf("fetch article: %w", err)
+	}
+
+	var article AgentArticle
+	if err := json.Unmarshal(data, &article); err != nil {
+		return nil, fmt.Errorf("decode article: %w", err)
+	}
+
+	return &article, nil
+}
+
+// Get-one endpoints for ingestion
+
+func (s *Service) GetSpecies(ctx context.Context, identifier string) (*Species, error) {
+	path := fmt.Sprintf("/pokemon/%s", identifier)
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("fetch species: %w", err)
+	}
+
+	var species Species
+	if err := json.Unmarshal(data, &species); err != nil {
+		return nil, fmt.Errorf("decode species: %w", err)
+	}
+
+	return &species, nil
+}
+
+func (s *Service) GetPokemon(ctx context.Context, identifier string) (*Pokemon, error) {
+	q := url.Values{}
+	q.Set("includeTypes", "true")
+	q.Set("includeAbilities", "true")
+	q.Set("includeMoves", "true")
+	q.Set("includeLabels", "true")
+	q.Set("includeEggGroups", "true")
+
+	path := fmt.Sprintf("/pokemon/form/%s?%s", identifier, q.Encode())
+	data, err := s.fetch(ctx, path)
+	if err != nil {
+		return nil, fmt.Errorf("fetch pokemon form: %w", err)
+	}
+
+	var pokemon Pokemon
+	if err := json.Unmarshal(data, &pokemon); err != nil {
+		return nil, fmt.Errorf("decode pokemon form: %w", err)
+	}
+
+	return &pokemon, nil
+}
+
+func (s *Service) GetMove(ctx context.Context, identifier string) (*Move, error) {
+	q := url.Values{}
+	q.Set("includeFlags", "true")
+
+	path := fmt.Sprintf("/moves/%s?%s", identifier, q.Encode())
+	data, err := s.fetch(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("fetch move: %w", err)
 	}
@@ -59,52 +395,15 @@ func (s *Service) GetMoveByID(ctx context.Context, id string) (*Move, error) {
 		return nil, fmt.Errorf("decode move: %w", err)
 	}
 
-	move.RawJSON = string(data)
 	return &move, nil
 }
 
-func (s *Service) SearchMoves(ctx context.Context, query string, limit int) ([]MoveSearchResult, error) {
+func (s *Service) GetAbility(ctx context.Context, identifier string) (*Ability, error) {
 	q := url.Values{}
-	q.Set("q", query)
-	if limit > 0 {
-		q.Set("limit", strconv.Itoa(limit))
-	}
+	q.Set("includeFlags", "true")
 
-	data, err := s.fetch(ctx, "/moves/search?"+q.Encode())
-	if err != nil {
-		return nil, fmt.Errorf("search moves: %w", err)
-	}
-
-	var results []MoveSearchResult
-	if err := json.Unmarshal(data, &results); err != nil {
-		return nil, fmt.Errorf("decode move search: %w", err)
-	}
-
-	return results, nil
-}
-
-func (s *Service) SearchTypes(ctx context.Context, query string, limit int) ([]TypeSearchResult, error) {
-	q := url.Values{}
-	q.Set("q", query)
-	if limit > 0 {
-		q.Set("limit", strconv.Itoa(limit))
-	}
-
-	data, err := s.fetch(ctx, "/types/search?"+q.Encode())
-	if err != nil {
-		return nil, fmt.Errorf("search types: %w", err)
-	}
-
-	var results []TypeSearchResult
-	if err := json.Unmarshal(data, &results); err != nil {
-		return nil, fmt.Errorf("decode type search: %w", err)
-	}
-
-	return results, nil
-}
-
-func (s *Service) GetAbilityByID(ctx context.Context, id string) (*Ability, error) {
-	data, err := s.fetch(ctx, fmt.Sprintf("/abilities/%s", id))
+	path := fmt.Sprintf("/abilities/%s?%s", identifier, q.Encode())
+	data, err := s.fetch(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("fetch ability: %w", err)
 	}
@@ -114,32 +413,35 @@ func (s *Service) GetAbilityByID(ctx context.Context, id string) (*Ability, erro
 		return nil, fmt.Errorf("decode ability: %w", err)
 	}
 
-	ability.RawJSON = string(data)
 	return &ability, nil
 }
 
-func (s *Service) SearchAbilities(ctx context.Context, query string, limit int) ([]AbilitySearchResult, error) {
+func (s *Service) GetItem(ctx context.Context, identifier string) (*Item, error) {
 	q := url.Values{}
-	q.Set("q", query)
-	if limit > 0 {
-		q.Set("limit", strconv.Itoa(limit))
-	}
+	q.Set("includeBoosts", "true")
+	q.Set("includeFlags", "true")
+	q.Set("includeTags", "true")
 
-	data, err := s.fetch(ctx, "/abilities/search?"+q.Encode())
+	path := fmt.Sprintf("/items/%s?%s", identifier, q.Encode())
+	data, err := s.fetch(ctx, path)
 	if err != nil {
-		return nil, fmt.Errorf("search abilities: %w", err)
+		return nil, fmt.Errorf("fetch item: %w", err)
 	}
 
-	var results []AbilitySearchResult
-	if err := json.Unmarshal(data, &results); err != nil {
-		return nil, fmt.Errorf("decode ability search: %w", err)
+	var item Item
+	if err := json.Unmarshal(data, &item); err != nil {
+		return nil, fmt.Errorf("decode item: %w", err)
 	}
 
-	return results, nil
+	return &item, nil
 }
 
-func (s *Service) GetArticleByID(ctx context.Context, id string) (*Article, error) {
-	data, err := s.fetch(ctx, fmt.Sprintf("/articles/%s", id))
+func (s *Service) GetArticle(ctx context.Context, identifier string) (*Article, error) {
+	q := url.Values{}
+	q.Set("includeCategories", "true")
+
+	path := fmt.Sprintf("/articles/%s?%s", identifier, q.Encode())
+	data, err := s.fetch(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("fetch article: %w", err)
 	}
@@ -149,123 +451,5 @@ func (s *Service) GetArticleByID(ctx context.Context, id string) (*Article, erro
 		return nil, fmt.Errorf("decode article: %w", err)
 	}
 
-	article.RawJSON = string(data)
 	return &article, nil
-}
-
-func (s *Service) SearchArticles(ctx context.Context, query string, limit int) ([]ArticleSearchResult, error) {
-	q := url.Values{}
-	q.Set("q", query)
-	if limit > 0 {
-		q.Set("limit", strconv.Itoa(limit))
-	}
-
-	data, err := s.fetch(ctx, "/articles/search?"+q.Encode())
-	if err != nil {
-		return nil, fmt.Errorf("search articles: %w", err)
-	}
-
-	var results []ArticleSearchResult
-	if err := json.Unmarshal(data, &results); err != nil {
-		return nil, fmt.Errorf("decode article search: %w", err)
-	}
-
-	return results, nil
-}
-
-func (s *Service) SearchForms(ctx context.Context, params FormSearchParams) (*FormSearchResponse, error) {
-	q := url.Values{}
-
-	if params.Query != "" {
-		q.Set("q", params.Query)
-	}
-	if params.FormID != "" {
-		q.Set("formId", params.FormID)
-	}
-	if params.SpeciesID != "" {
-		q.Set("speciesId", params.SpeciesID)
-	}
-	if params.VariationID != "" {
-		q.Set("variationId", params.VariationID)
-	}
-	if len(params.Types) > 0 {
-		q.Set("types", strings.Join(params.Types, ","))
-	}
-	if len(params.Abilities) > 0 {
-		q.Set("abilities", strings.Join(params.Abilities, ","))
-	}
-	if len(params.Moves) > 0 {
-		q.Set("moves", strings.Join(params.Moves, ","))
-	}
-	if params.Generation != nil {
-		q.Set("generation", strconv.Itoa(*params.Generation))
-	}
-	if params.MinHP != nil {
-		q.Set("minHp", strconv.Itoa(*params.MinHP))
-	}
-	if params.MaxHP != nil {
-		q.Set("maxHp", strconv.Itoa(*params.MaxHP))
-	}
-	if params.MinAttack != nil {
-		q.Set("minAttack", strconv.Itoa(*params.MinAttack))
-	}
-	if params.MaxAttack != nil {
-		q.Set("maxAttack", strconv.Itoa(*params.MaxAttack))
-	}
-	if params.MinDefense != nil {
-		q.Set("minDefense", strconv.Itoa(*params.MinDefense))
-	}
-	if params.MaxDefense != nil {
-		q.Set("maxDefense", strconv.Itoa(*params.MaxDefense))
-	}
-	if params.MinSpecialAttack != nil {
-		q.Set("minSpecialAttack", strconv.Itoa(*params.MinSpecialAttack))
-	}
-	if params.MaxSpecialAttack != nil {
-		q.Set("maxSpecialAttack", strconv.Itoa(*params.MaxSpecialAttack))
-	}
-	if params.MinSpecialDefense != nil {
-		q.Set("minSpecialDefense", strconv.Itoa(*params.MinSpecialDefense))
-	}
-	if params.MaxSpecialDefense != nil {
-		q.Set("maxSpecialDefense", strconv.Itoa(*params.MaxSpecialDefense))
-	}
-	if params.MinSpeed != nil {
-		q.Set("minSpeed", strconv.Itoa(*params.MinSpeed))
-	}
-	if params.MaxSpeed != nil {
-		q.Set("maxSpeed", strconv.Itoa(*params.MaxSpeed))
-	}
-	if params.MinBST != nil {
-		q.Set("minBst", strconv.Itoa(*params.MinBST))
-	}
-	if params.MaxBST != nil {
-		q.Set("maxBst", strconv.Itoa(*params.MaxBST))
-	}
-	if len(params.Include) > 0 {
-		q.Set("include", strings.Join(params.Include, ","))
-	}
-	if params.Limit > 0 {
-		q.Set("limit", strconv.Itoa(params.Limit))
-	}
-	if params.Offset > 0 {
-		q.Set("offset", strconv.Itoa(params.Offset))
-	}
-
-	path := "/pokemon/search"
-	if encoded := q.Encode(); encoded != "" {
-		path += "?" + encoded
-	}
-
-	data, err := s.fetch(ctx, path)
-	if err != nil {
-		return nil, fmt.Errorf("search forms: %w", err)
-	}
-
-	var resp FormSearchResponse
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return nil, fmt.Errorf("decode search response: %w", err)
-	}
-
-	return &resp, nil
 }

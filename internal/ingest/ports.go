@@ -18,10 +18,12 @@ type embedService interface {
 }
 
 type pokemonService interface {
-	SearchForms(ctx context.Context, params pokemon.FormSearchParams) (*pokemon.FormSearchResponse, error)
-	GetMoveByID(ctx context.Context, id string) (*pokemon.Move, error)
-	GetAbilityByID(ctx context.Context, id string) (*pokemon.Ability, error)
-	GetArticleByID(ctx context.Context, id string) (*pokemon.Article, error)
+	GetSpecies(ctx context.Context, identifier string) (*pokemon.Species, error)
+	GetPokemon(ctx context.Context, identifier string) (*pokemon.Pokemon, error)
+	GetMove(ctx context.Context, identifier string) (*pokemon.Move, error)
+	GetAbility(ctx context.Context, identifier string) (*pokemon.Ability, error)
+	GetItem(ctx context.Context, identifier string) (*pokemon.Item, error)
+	GetArticle(ctx context.Context, identifier string) (*pokemon.Article, error)
 }
 
 type vectorStore interface {

@@ -69,59 +69,59 @@ func cleanupTestData(t *testing.T, externalIDs ...string) {
 }
 
 func TestRepository_Upsert_Insert(t *testing.T) {
-	cleanupTestData(t, "test-pokemon-1")
-	defer cleanupTestData(t, "test-pokemon-1")
+	cleanupTestData(t, "test-form-1")
+	defer cleanupTestData(t, "test-form-1")
 
 	ctx := context.Background()
 	repo := NewRepository(testDB)
 
 	doc := &IngestedDocument{
 		ID:           uuid.Must(uuid.NewV7()),
-		DocumentType: DocumentTypePokemon,
-		ExternalID:   "test-pokemon-1",
+		DocumentType: DocumentTypeForm,
+		ExternalID:   "test-form-1",
 	}
 
 	err := repo.Upsert(ctx, doc)
 	require.NoError(t, err)
 
-	found, err := repo.FindByRef(ctx, DocumentTypePokemon, "test-pokemon-1")
+	found, err := repo.FindByRef(ctx, DocumentTypeForm, "test-form-1")
 	require.NoError(t, err)
 	assert.Equal(t, doc.ID, found.ID)
-	assert.Equal(t, DocumentTypePokemon, found.DocumentType)
-	assert.Equal(t, "test-pokemon-1", found.ExternalID)
+	assert.Equal(t, DocumentTypeForm, found.DocumentType)
+	assert.Equal(t, "test-form-1", found.ExternalID)
 	assert.False(t, found.CreatedAt.IsZero())
 	assert.False(t, found.UpdatedAt.IsZero())
 }
 
 func TestRepository_Upsert_Update(t *testing.T) {
-	cleanupTestData(t, "test-pokemon-2")
-	defer cleanupTestData(t, "test-pokemon-2")
+	cleanupTestData(t, "test-form-2")
+	defer cleanupTestData(t, "test-form-2")
 
 	ctx := context.Background()
 	repo := NewRepository(testDB)
 
 	doc1 := &IngestedDocument{
 		ID:           uuid.Must(uuid.NewV7()),
-		DocumentType: DocumentTypePokemon,
-		ExternalID:   "test-pokemon-2",
+		DocumentType: DocumentTypeForm,
+		ExternalID:   "test-form-2",
 	}
 	err := repo.Upsert(ctx, doc1)
 	require.NoError(t, err)
 
-	original, err := repo.FindByRef(ctx, DocumentTypePokemon, "test-pokemon-2")
+	original, err := repo.FindByRef(ctx, DocumentTypeForm, "test-form-2")
 	require.NoError(t, err)
 
 	time.Sleep(10 * time.Millisecond)
 
 	doc2 := &IngestedDocument{
 		ID:           uuid.Must(uuid.NewV7()),
-		DocumentType: DocumentTypePokemon,
-		ExternalID:   "test-pokemon-2",
+		DocumentType: DocumentTypeForm,
+		ExternalID:   "test-form-2",
 	}
 	err = repo.Upsert(ctx, doc2)
 	require.NoError(t, err)
 
-	updated, err := repo.FindByRef(ctx, DocumentTypePokemon, "test-pokemon-2")
+	updated, err := repo.FindByRef(ctx, DocumentTypeForm, "test-form-2")
 	require.NoError(t, err)
 
 	assert.Equal(t, original.ID, updated.ID)
@@ -129,46 +129,46 @@ func TestRepository_Upsert_Update(t *testing.T) {
 }
 
 func TestRepository_FindByRef_Found(t *testing.T) {
-	cleanupTestData(t, "test-pokemon-find")
-	defer cleanupTestData(t, "test-pokemon-find")
+	cleanupTestData(t, "test-form-find")
+	defer cleanupTestData(t, "test-form-find")
 
 	ctx := context.Background()
 	repo := NewRepository(testDB)
 
 	doc := &IngestedDocument{
 		ID:           uuid.Must(uuid.NewV7()),
-		DocumentType: DocumentTypePokemon,
-		ExternalID:   "test-pokemon-find",
+		DocumentType: DocumentTypeForm,
+		ExternalID:   "test-form-find",
 	}
 	err := repo.Upsert(ctx, doc)
 	require.NoError(t, err)
 
-	found, err := repo.FindByRef(ctx, DocumentTypePokemon, "test-pokemon-find")
+	found, err := repo.FindByRef(ctx, DocumentTypeForm, "test-form-find")
 	require.NoError(t, err)
 	assert.Equal(t, doc.ID, found.ID)
-	assert.Equal(t, "test-pokemon-find", found.ExternalID)
+	assert.Equal(t, "test-form-find", found.ExternalID)
 }
 
 func TestRepository_FindByRef_NotFound(t *testing.T) {
 	ctx := context.Background()
 	repo := NewRepository(testDB)
 
-	_, err := repo.FindByRef(ctx, DocumentTypePokemon, "nonexistent-pokemon-xyz")
+	_, err := repo.FindByRef(ctx, DocumentTypeForm, "nonexistent-form-xyz")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrNotFound)
 }
 
 func TestRepository_Delete(t *testing.T) {
-	cleanupTestData(t, "test-pokemon-delete")
-	defer cleanupTestData(t, "test-pokemon-delete")
+	cleanupTestData(t, "test-form-delete")
+	defer cleanupTestData(t, "test-form-delete")
 
 	ctx := context.Background()
 	repo := NewRepository(testDB)
 
 	doc := &IngestedDocument{
 		ID:           uuid.Must(uuid.NewV7()),
-		DocumentType: DocumentTypePokemon,
-		ExternalID:   "test-pokemon-delete",
+		DocumentType: DocumentTypeForm,
+		ExternalID:   "test-form-delete",
 	}
 	err := repo.Upsert(ctx, doc)
 	require.NoError(t, err)
@@ -176,29 +176,29 @@ func TestRepository_Delete(t *testing.T) {
 	err = repo.Delete(ctx, doc.ID)
 	require.NoError(t, err)
 
-	_, err = repo.FindByRef(ctx, DocumentTypePokemon, "test-pokemon-delete")
+	_, err = repo.FindByRef(ctx, DocumentTypeForm, "test-form-delete")
 	assert.ErrorIs(t, err, ErrNotFound)
 }
 
 func TestRepository_DeleteByRef(t *testing.T) {
-	cleanupTestData(t, "test-pokemon-deleteref")
-	defer cleanupTestData(t, "test-pokemon-deleteref")
+	cleanupTestData(t, "test-form-deleteref")
+	defer cleanupTestData(t, "test-form-deleteref")
 
 	ctx := context.Background()
 	repo := NewRepository(testDB)
 
 	doc := &IngestedDocument{
 		ID:           uuid.Must(uuid.NewV7()),
-		DocumentType: DocumentTypePokemon,
-		ExternalID:   "test-pokemon-deleteref",
+		DocumentType: DocumentTypeForm,
+		ExternalID:   "test-form-deleteref",
 	}
 	err := repo.Upsert(ctx, doc)
 	require.NoError(t, err)
 
-	err = repo.DeleteByRef(ctx, DocumentTypePokemon, "test-pokemon-deleteref")
+	err = repo.DeleteByRef(ctx, DocumentTypeForm, "test-form-deleteref")
 	require.NoError(t, err)
 
-	_, err = repo.FindByRef(ctx, DocumentTypePokemon, "test-pokemon-deleteref")
+	_, err = repo.FindByRef(ctx, DocumentTypeForm, "test-form-deleteref")
 	assert.ErrorIs(t, err, ErrNotFound)
 }
 
@@ -212,14 +212,14 @@ func TestRepository_InTx_Commit(t *testing.T) {
 	err := repo.InTx(ctx, func(txRepo Repository) error {
 		doc := &IngestedDocument{
 			ID:           uuid.Must(uuid.NewV7()),
-			DocumentType: DocumentTypePokemon,
+			DocumentType: DocumentTypeForm,
 			ExternalID:   "test-tx-commit",
 		}
 		return txRepo.Upsert(ctx, doc)
 	})
 	require.NoError(t, err)
 
-	found, err := repo.FindByRef(ctx, DocumentTypePokemon, "test-tx-commit")
+	found, err := repo.FindByRef(ctx, DocumentTypeForm, "test-tx-commit")
 	require.NoError(t, err)
 	assert.Equal(t, "test-tx-commit", found.ExternalID)
 }
@@ -236,7 +236,7 @@ func TestRepository_InTx_Rollback(t *testing.T) {
 	err := repo.InTx(ctx, func(txRepo Repository) error {
 		doc := &IngestedDocument{
 			ID:           uuid.Must(uuid.NewV7()),
-			DocumentType: DocumentTypePokemon,
+			DocumentType: DocumentTypeForm,
 			ExternalID:   "test-tx-rollback",
 		}
 		if err := txRepo.Upsert(ctx, doc); err != nil {
@@ -247,6 +247,6 @@ func TestRepository_InTx_Rollback(t *testing.T) {
 
 	require.ErrorIs(t, err, expectedErr)
 
-	_, err = repo.FindByRef(ctx, DocumentTypePokemon, "test-tx-rollback")
+	_, err = repo.FindByRef(ctx, DocumentTypeForm, "test-tx-rollback")
 	assert.ErrorIs(t, err, ErrNotFound)
 }

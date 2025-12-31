@@ -16,14 +16,12 @@ type Service interface {
 }
 
 type pokemonService interface {
-	GetMoveByID(ctx context.Context, id string) (*pokemon.Move, error)
-	SearchMoves(ctx context.Context, query string, limit int) ([]pokemon.MoveSearchResult, error)
-	SearchTypes(ctx context.Context, query string, limit int) ([]pokemon.TypeSearchResult, error)
-	GetAbilityByID(ctx context.Context, id string) (*pokemon.Ability, error)
-	SearchAbilities(ctx context.Context, query string, limit int) ([]pokemon.AbilitySearchResult, error)
-	GetArticleByID(ctx context.Context, id string) (*pokemon.Article, error)
-	SearchArticles(ctx context.Context, query string, limit int) ([]pokemon.ArticleSearchResult, error)
-	SearchForms(ctx context.Context, params pokemon.FormSearchParams) (*pokemon.FormSearchResponse, error)
+	SearchPokemon(ctx context.Context, params pokemon.AgentPokemonParams) (*pokemon.PaginatedResponse[pokemon.AgentPokemon], error)
+	SearchMoves(ctx context.Context, params pokemon.AgentMoveParams) (*pokemon.PaginatedResponse[pokemon.AgentMove], error)
+	SearchAbilities(ctx context.Context, params pokemon.AgentAbilityParams) (*pokemon.PaginatedResponse[pokemon.AgentAbility], error)
+	SearchItems(ctx context.Context, params pokemon.AgentItemParams) (*pokemon.PaginatedResponse[pokemon.AgentItem], error)
+	SearchArticles(ctx context.Context, params pokemon.AgentArticleParams) (*pokemon.PaginatedResponse[pokemon.AgentArticleSearch], error)
+	GetArticleBySlug(ctx context.Context, slug string) (*pokemon.AgentArticle, error)
 }
 
 type vectorStore interface {

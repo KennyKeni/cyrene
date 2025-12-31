@@ -3,7 +3,6 @@ package rag
 import (
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	"cyrene/internal/ingest"
 	"cyrene/internal/platform/vectorstore"
@@ -13,103 +12,6 @@ import (
 	"github.com/firebase/genkit/go/genkit"
 )
 
-type FormSearchStats struct {
-	HP             int `json:"hp"`
-	Attack         int `json:"attack"`
-	Defense        int `json:"defense"`
-	SpecialAttack  int `json:"specialAttack"`
-	SpecialDefense int `json:"specialDefense"`
-	Speed          int `json:"speed"`
-}
-
-type MoveToolResponse struct {
-	ID          int      `json:"id,omitempty"`
-	Name        string   `json:"name,omitempty"`
-	Identifier  string   `json:"identifier,omitempty"`
-	Type        string   `json:"type,omitempty"`
-	Category    string   `json:"category,omitempty"`
-	Power       int      `json:"power,omitempty"`
-	Accuracy    int      `json:"accuracy,omitempty"`
-	PP          int      `json:"pp,omitempty"`
-	Priority    int      `json:"priority,omitempty"`
-	Target      string   `json:"target,omitempty"`
-	Effect      string   `json:"effect,omitempty"`
-	Flags       []string `json:"flags,omitempty"`
-	Error       string   `json:"error,omitempty"`
-}
-
-type AbilityToolResponse struct {
-	ID          int    `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Identifier  string `json:"identifier,omitempty"`
-	Generation  int    `json:"generation,omitempty"`
-	Description string `json:"description,omitempty"`
-	Error       string `json:"error,omitempty"`
-}
-
-type ArticleToolResponse struct {
-	ID         int      `json:"id,omitempty"`
-	Title      string   `json:"title,omitempty"`
-	Subtitle   string   `json:"subtitle,omitempty"`
-	Body       string   `json:"body,omitempty"`
-	Identifier string   `json:"identifier,omitempty"`
-	Categories []string `json:"categories,omitempty"`
-	Error      string   `json:"error,omitempty"`
-}
-
-type FormSearchToolInput struct {
-	Query      string   `json:"query,omitempty" jsonschema_description:"Fuzzy search on Pokemon name (e.g., 'char' matches 'Charizard', 'Charmander')"`
-	Types      []string `json:"types,omitempty" jsonschema_description:"Filter by type identifiers (e.g., ['fire', 'flying']). Results must have ALL specified types."`
-	Abilities  []string `json:"abilities,omitempty" jsonschema_description:"Filter by ability identifiers (e.g., ['levitate', 'intimidate']). Results must have ALL specified abilities."`
-	Moves      []string `json:"moves,omitempty" jsonschema_description:"Filter by move identifiers (e.g., ['earthquake', 'fly']). Results must know ALL specified moves."`
-	Generation *int     `json:"generation,omitempty" jsonschema_description:"Filter by generation (1-9)"`
-	MinHP      *int     `json:"minHp,omitempty" jsonschema_description:"Minimum HP stat"`
-	MaxHP      *int     `json:"maxHp,omitempty" jsonschema_description:"Maximum HP stat"`
-	MinAttack  *int     `json:"minAttack,omitempty" jsonschema_description:"Minimum Attack stat"`
-	MaxAttack  *int     `json:"maxAttack,omitempty" jsonschema_description:"Maximum Attack stat"`
-	MinDefense *int     `json:"minDefense,omitempty" jsonschema_description:"Minimum Defense stat"`
-	MaxDefense *int     `json:"maxDefense,omitempty" jsonschema_description:"Maximum Defense stat"`
-	MinSpAtk   *int     `json:"minSpecialAttack,omitempty" jsonschema_description:"Minimum Special Attack stat"`
-	MaxSpAtk   *int     `json:"maxSpecialAttack,omitempty" jsonschema_description:"Maximum Special Attack stat"`
-	MinSpDef   *int     `json:"minSpecialDefense,omitempty" jsonschema_description:"Minimum Special Defense stat"`
-	MaxSpDef   *int     `json:"maxSpecialDefense,omitempty" jsonschema_description:"Maximum Special Defense stat"`
-	MinSpeed   *int     `json:"minSpeed,omitempty" jsonschema_description:"Minimum Speed stat"`
-	MaxSpeed   *int     `json:"maxSpeed,omitempty" jsonschema_description:"Maximum Speed stat"`
-	MinBST     *int     `json:"minBst,omitempty" jsonschema_description:"Minimum Base Stat Total"`
-	MaxBST     *int     `json:"maxBst,omitempty" jsonschema_description:"Maximum Base Stat Total"`
-	Limit      int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 10, max 100)"`
-}
-
-type FormSearchSpecies struct {
-	Name           string `json:"name"`
-	GenderRate     string `json:"genderRate"`
-	CatchRate      int    `json:"catchRate"`
-	GrowthRate     string `json:"growthRate"`
-	BaseFriendship int    `json:"baseFriendship"`
-	EggCycle       int    `json:"eggCycle"`
-	IsBaby         bool   `json:"isBaby"`
-	Classification string `json:"classification"`
-}
-
-type FormSearchToolResult struct {
-	ID         int                `json:"id"`
-	Name       string             `json:"name"`
-	FormName   string             `json:"formName"`
-	Generation int                `json:"generation"`
-	Height     float64            `json:"height"`
-	Weight     float64            `json:"weight"`
-	Species    FormSearchSpecies  `json:"species"`
-	Stats      FormSearchStats    `json:"stats"`
-	Types      []string           `json:"types"`
-	Abilities  []string           `json:"abilities"`
-}
-
-type FormSearchToolResponse struct {
-	Results []FormSearchToolResult `json:"results,omitempty"`
-	Total   int                    `json:"total,omitempty"`
-	Error   string                 `json:"error,omitempty"`
-}
-
 type SearchToolResponse struct {
 	Results []vectorstore.SearchResult `json:"results,omitempty"`
 	Error   string                     `json:"error,omitempty"`
@@ -117,8 +19,10 @@ type SearchToolResponse struct {
 
 func (s *service) registerTools(g *genkit.Genkit) {
 	s.searchPokemonTool = s.defineSearchPokemonTool(g)
-	s.getMoveTool = s.defineGetMoveTool(g)
-	s.getAbilityTool = s.defineGetAbilityTool(g)
+	s.searchMovesTool = s.defineSearchMovesTool(g)
+	s.searchAbilitiesTool = s.defineSearchAbilitiesTool(g)
+	s.searchItemsTool = s.defineSearchItemsTool(g)
+	s.searchArticlesTool = s.defineSearchArticlesTool(g)
 	s.getArticleTool = s.defineGetArticleTool(g)
 	s.searchTool = s.defineVectorSearchTool(g)
 }
@@ -127,215 +31,222 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"searchPokemon",
-		`Search and filter Pokemon forms. Returns form data (stats, types, abilities, height, weight) plus species data (growth rate, gender ratio, catch rate, base friendship, egg cycles, classification, baby status). Filters: name (fuzzy), types, abilities, moves, generation, stat ranges (HP/Atk/Def/SpA/SpD/Spe), BST range.`,
-		func(ctx *ai.ToolContext, input FormSearchToolInput) (*FormSearchToolResponse, error) {
+		`Search Pokemon by name, type, ability, move, egg group, label, or generation. Returns form data including stats, types, abilities, and more. All filters use fuzzy matching. Use include flags to control response size.`,
+		func(ctx *ai.ToolContext, input struct {
+			Names      []string `json:"names,omitempty" jsonschema_description:"Fuzzy match Pokemon names (e.g., ['pikachu', 'char'])"`
+			Types      []string `json:"types,omitempty" jsonschema_description:"Filter by type names (e.g., ['fire', 'water']). Returns Pokemon with any matching type."`
+			Abilities  []string `json:"abilities,omitempty" jsonschema_description:"Filter by ability names (e.g., ['levitate']). Returns Pokemon with any matching ability."`
+			Moves      []string `json:"moves,omitempty" jsonschema_description:"Filter by move names (e.g., ['thunderbolt']). Returns Pokemon that can learn any matching move."`
+			EggGroups  []string `json:"eggGroups,omitempty" jsonschema_description:"Filter by egg group names (e.g., ['dragon', 'monster'])."`
+			Labels     []string `json:"labels,omitempty" jsonschema_description:"Filter by labels (e.g., ['legendary', 'starter'])."`
+			Generation []int    `json:"generation,omitempty" jsonschema_description:"Filter by generation numbers (e.g., [1, 2, 3])."`
+			Limit      int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
+		}) (*pokemon.PaginatedResponse[pokemon.AgentPokemon], error) {
 			slog.Info("tool searchPokemon",
-				"query", input.Query,
+				"names", input.Names,
 				"types", input.Types,
 				"abilities", input.Abilities,
 				"moves", input.Moves,
+				"eggGroups", input.EggGroups,
+				"labels", input.Labels,
 				"generation", input.Generation,
 				"limit", input.Limit,
 			)
 
 			limit := input.Limit
 			if limit <= 0 {
-				limit = 10
+				limit = 5
 			}
 			if limit > 100 {
 				limit = 100
 			}
 
-			types := s.resolveTypes(ctx, input.Types)
-			abilities := s.resolveAbilities(ctx, input.Abilities)
-			moves := s.resolveMoves(ctx, input.Moves)
+			params := pokemon.AgentPokemonParams{
+				Names:            input.Names,
+				Types:            input.Types,
+				Abilities:        input.Abilities,
+				Moves:            input.Moves,
+				EggGroups:        input.EggGroups,
+				Labels:           input.Labels,
+				Generation:       input.Generation,
+				IncludeStats:     true,
+				IncludeTypes:     true,
+				IncludeAbilities: true,
+				Limit:            limit,
+			}
 
-			params := pokemon.FormSearchParams{
-				Query:             input.Query,
-				Types:             types,
-				Abilities:         abilities,
-				Moves:             moves,
-				Generation:        input.Generation,
-				MinHP:             input.MinHP,
-				MaxHP:             input.MaxHP,
-				MinAttack:         input.MinAttack,
-				MaxAttack:         input.MaxAttack,
-				MinDefense:        input.MinDefense,
-				MaxDefense:        input.MaxDefense,
-				MinSpecialAttack:  input.MinSpAtk,
-				MaxSpecialAttack:  input.MaxSpAtk,
-				MinSpecialDefense: input.MinSpDef,
-				MaxSpecialDefense: input.MaxSpDef,
-				MinSpeed:          input.MinSpeed,
-				MaxSpeed:          input.MaxSpeed,
-				MinBST:            input.MinBST,
-				MaxBST:            input.MaxBST,
-				Include:           []string{"stats", "types", "abilities"},
+			resp, err := s.pokemon.SearchPokemon(ctx, params)
+			if err != nil {
+				slog.Error("tool searchPokemon failed", "error", err)
+				return nil, err
+			}
+
+			slog.Info("tool searchPokemon completed", "results", len(resp.Results), "total", resp.Total)
+			return resp, nil
+		},
+	)
+}
+
+func (s *service) defineSearchMovesTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"searchMoves",
+		`Search moves by name, type, or category. Returns move data including power, accuracy, PP, effects. All filters use fuzzy matching.`,
+		func(ctx *ai.ToolContext, input struct {
+			Names      []string `json:"names,omitempty" jsonschema_description:"Fuzzy match move names (e.g., ['thunderbolt', 'earthquake'])"`
+			Types      []string `json:"types,omitempty" jsonschema_description:"Filter by type names (e.g., ['fire', 'water'])"`
+			Categories []string `json:"categories,omitempty" jsonschema_description:"Filter by category (e.g., ['Physical', 'Special', 'Status'])"`
+			Limit      int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
+		}) (*pokemon.PaginatedResponse[pokemon.AgentMove], error) {
+			slog.Info("tool searchMoves",
+				"names", input.Names,
+				"types", input.Types,
+				"categories", input.Categories,
+				"limit", input.Limit,
+			)
+
+			limit := input.Limit
+			if limit <= 0 {
+				limit = 5
+			}
+			if limit > 100 {
+				limit = 100
+			}
+
+			params := pokemon.AgentMoveParams{
+				Names:              input.Names,
+				Types:              input.Types,
+				Categories:         input.Categories,
+				IncludeDescription: true,
+				IncludeFlags:       true,
+				Limit:              limit,
+			}
+
+			resp, err := s.pokemon.SearchMoves(ctx, params)
+			if err != nil {
+				slog.Error("tool searchMoves failed", "error", err)
+				return nil, err
+			}
+
+			slog.Info("tool searchMoves completed", "results", len(resp.Results), "total", resp.Total)
+			return resp, nil
+		},
+	)
+}
+
+func (s *service) defineSearchAbilitiesTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"searchAbilities",
+		`Search abilities by name. Returns ability data including description. Uses fuzzy matching.`,
+		func(ctx *ai.ToolContext, input struct {
+			Names []string `json:"names,omitempty" jsonschema_description:"Fuzzy match ability names (e.g., ['levitate', 'intimidate'])"`
+			Limit int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
+		}) (*pokemon.PaginatedResponse[pokemon.AgentAbility], error) {
+			slog.Info("tool searchAbilities", "names", input.Names, "limit", input.Limit)
+
+			limit := input.Limit
+			if limit <= 0 {
+				limit = 5
+			}
+			if limit > 100 {
+				limit = 100
+			}
+
+			params := pokemon.AgentAbilityParams{
+				Names:              input.Names,
+				IncludeDescription: true,
+				Limit:              limit,
+			}
+
+			resp, err := s.pokemon.SearchAbilities(ctx, params)
+			if err != nil {
+				slog.Error("tool searchAbilities failed", "error", err)
+				return nil, err
+			}
+
+			slog.Info("tool searchAbilities completed", "results", len(resp.Results), "total", resp.Total)
+			return resp, nil
+		},
+	)
+}
+
+func (s *service) defineSearchItemsTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"searchItems",
+		`Search items by name or tag. Returns item data including description and stat boosts. Uses fuzzy matching.`,
+		func(ctx *ai.ToolContext, input struct {
+			Names []string `json:"names,omitempty" jsonschema_description:"Fuzzy match item names (e.g., ['potion', 'pokeball'])"`
+			Tags  []string `json:"tags,omitempty" jsonschema_description:"Filter by tag names (e.g., ['medicine', 'ball'])"`
+			Limit int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
+		}) (*pokemon.PaginatedResponse[pokemon.AgentItem], error) {
+			slog.Info("tool searchItems", "names", input.Names, "tags", input.Tags, "limit", input.Limit)
+
+			limit := input.Limit
+			if limit <= 0 {
+				limit = 5
+			}
+			if limit > 100 {
+				limit = 100
+			}
+
+			params := pokemon.AgentItemParams{
+				Names:              input.Names,
+				Tags:               input.Tags,
+				IncludeDescription: true,
+				IncludeBoosts:      true,
+				IncludeTags:        true,
+				Limit:              limit,
+			}
+
+			resp, err := s.pokemon.SearchItems(ctx, params)
+			if err != nil {
+				slog.Error("tool searchItems failed", "error", err)
+				return nil, err
+			}
+
+			slog.Info("tool searchItems completed", "results", len(resp.Results), "total", resp.Total)
+			return resp, nil
+		},
+	)
+}
+
+func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
+	return genkit.DefineTool(
+		g,
+		"searchArticles",
+		`Search articles by title or category. Returns article metadata. Use getArticle to fetch full article body by slug.`,
+		func(ctx *ai.ToolContext, input struct {
+			Titles     []string `json:"titles,omitempty" jsonschema_description:"Fuzzy match article titles (e.g., ['breeding', 'ev training'])"`
+			Categories []string `json:"categories,omitempty" jsonschema_description:"Filter by category names (e.g., ['guide', 'tutorial'])"`
+			Limit      int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
+		}) (*pokemon.PaginatedResponse[pokemon.AgentArticleSearch], error) {
+			slog.Info("tool searchArticles", "titles", input.Titles, "categories", input.Categories, "limit", input.Limit)
+
+			limit := input.Limit
+			if limit <= 0 {
+				limit = 5
+			}
+			if limit > 100 {
+				limit = 100
+			}
+
+			params := pokemon.AgentArticleParams{
+				Titles:            input.Titles,
+				Categories:        input.Categories,
+				IncludeCategories: true,
 				Limit:             limit,
 			}
 
-			resp, err := s.pokemon.SearchForms(ctx, params)
+			resp, err := s.pokemon.SearchArticles(ctx, params)
 			if err != nil {
-				slog.Error("tool searchPokemon failed", "error", err)
-				return &FormSearchToolResponse{Error: err.Error()}, nil
+				slog.Error("tool searchArticles failed", "error", err)
+				return nil, err
 			}
 
-			results := make([]FormSearchToolResult, len(resp.Data))
-			for i, form := range resp.Data {
-				var types []string
-				for _, t := range form.Types {
-					types = append(types, t.Type.Name)
-				}
-
-				var abilities []string
-				for _, a := range form.Abilities {
-					name := a.Ability.Name
-					if a.IsHidden {
-						name += " (Hidden)"
-					}
-					abilities = append(abilities, name)
-				}
-
-				var stats FormSearchStats
-				if form.Stats != nil {
-					stats = FormSearchStats{
-						HP:             form.Stats.HP,
-						Attack:         form.Stats.Attack,
-						Defense:        form.Stats.Defense,
-						SpecialAttack:  form.Stats.SpecialAttack,
-						SpecialDefense: form.Stats.SpecialDefense,
-						Speed:          form.Stats.Speed,
-					}
-				}
-
-				species := FormSearchSpecies{
-					Name:           form.Species.Name,
-					GenderRate:     pokemon.GenderRateDescription(form.Species.GenderRate),
-					CatchRate:      form.Species.CatchRate,
-					GrowthRate:     pokemon.GrowthRateName(form.Species.GrowthRate),
-					BaseFriendship: form.Species.BaseFriendship,
-					EggCycle:       form.Species.EggCycle,
-					IsBaby:         form.Species.IsBaby,
-					Classification: form.Species.Classification.Name,
-				}
-
-				results[i] = FormSearchToolResult{
-					ID:         form.ID,
-					Name:       form.Name,
-					FormName:   form.FormName,
-					Generation: form.Generation,
-					Height:     float64(form.Height) / 10,
-					Weight:     float64(form.Weight) / 10,
-					Species:    species,
-					Stats:      stats,
-					Types:      types,
-					Abilities:  abilities,
-				}
-			}
-
-			slog.Info("tool searchPokemon completed", "results", len(results), "total", resp.Total)
-			return &FormSearchToolResponse{
-				Results: results,
-				Total:   resp.Total,
-			}, nil
-		},
-	)
-}
-
-func (s *service) defineGetMoveTool(g *genkit.Genkit) ai.Tool {
-	return genkit.DefineTool(
-		g,
-		"getMove",
-		"Fetches move data by name or ID. Uses fuzzy search to find the move, then returns full details including type, power, accuracy, PP, priority, target, effect, and flags.",
-		func(ctx *ai.ToolContext, input struct {
-			Query string `json:"query" jsonschema_description:"Move name (e.g. 'thunderbolt', 'earthquake') or ID (e.g. '85')"`
-		}) (*MoveToolResponse, error) {
-			slog.Info("tool getMove", "query", input.Query)
-
-			results, err := s.pokemon.SearchMoves(ctx, input.Query, 1)
-			if err != nil {
-				slog.Error("tool getMove search failed", "error", err)
-				return &MoveToolResponse{Error: err.Error()}, nil
-			}
-			if len(results) == 0 {
-				slog.Warn("tool getMove not found", "query", input.Query)
-				return &MoveToolResponse{Error: fmt.Sprintf("move not found: %s", input.Query)}, nil
-			}
-
-			move, err := s.pokemon.GetMoveByID(ctx, strconv.Itoa(results[0].ID))
-			if err != nil {
-				slog.Error("tool getMove fetch failed", "error", err)
-				return &MoveToolResponse{Error: err.Error()}, nil
-			}
-
-			var flags []string
-			for _, f := range move.Flags {
-				flags = append(flags, f.Name)
-			}
-
-			effect := move.ShortEffect
-			if effect == "" {
-				effect = move.Effect
-			}
-
-			slog.Info("tool getMove completed", "id", move.ID, "name", move.Name)
-			return &MoveToolResponse{
-				ID:         move.ID,
-				Name:       move.Name,
-				Identifier: move.Identifier,
-				Type:       move.Type.Name,
-				Category:   move.MoveDamageClass.Name,
-				Power:      move.Power,
-				Accuracy:   move.Accuracy,
-				PP:         move.PowerPoints,
-				Priority:   move.Priority,
-				Target:     move.MoveTarget.Name,
-				Effect:     effect,
-				Flags:      flags,
-			}, nil
-		},
-	)
-}
-
-func (s *service) defineGetAbilityTool(g *genkit.Genkit) ai.Tool {
-	return genkit.DefineTool(
-		g,
-		"getAbility",
-		"Fetches ability data by name or ID. Uses fuzzy search to find the ability, then returns full details including name, generation, and description.",
-		func(ctx *ai.ToolContext, input struct {
-			Query string `json:"query" jsonschema_description:"Ability name (e.g. 'static', 'intimidate') or ID (e.g. '9')"`
-		}) (*AbilityToolResponse, error) {
-			slog.Info("tool getAbility", "query", input.Query)
-
-			results, err := s.pokemon.SearchAbilities(ctx, input.Query, 1)
-			if err != nil {
-				slog.Error("tool getAbility search failed", "error", err)
-				return &AbilityToolResponse{Error: err.Error()}, nil
-			}
-			if len(results) == 0 {
-				slog.Warn("tool getAbility not found", "query", input.Query)
-				return &AbilityToolResponse{Error: fmt.Sprintf("ability not found: %s", input.Query)}, nil
-			}
-
-			ability, err := s.pokemon.GetAbilityByID(ctx, strconv.Itoa(results[0].ID))
-			if err != nil {
-				slog.Error("tool getAbility fetch failed", "error", err)
-				return &AbilityToolResponse{Error: err.Error()}, nil
-			}
-
-			description := ability.ShortDescription
-			if description == "" {
-				description = ability.Description
-			}
-
-			slog.Info("tool getAbility completed", "id", ability.ID, "name", ability.Name)
-			return &AbilityToolResponse{
-				ID:          ability.ID,
-				Name:        ability.Name,
-				Identifier:  ability.Identifier,
-				Generation:  ability.Generation,
-				Description: description,
-			}, nil
+			slog.Info("tool searchArticles completed", "results", len(resp.Results), "total", resp.Total)
+			return resp, nil
 		},
 	)
 }
@@ -344,42 +255,24 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"getArticle",
-		"Fetches a specific article by exact title or ID. Only use this tool when you already know the exact article title or ID from a previous search result. Do NOT use for exploratory queries - use the search tool instead to discover relevant articles first.",
+		`Fetch a specific article by its slug. Use this after searchArticles to get the full article body.`,
 		func(ctx *ai.ToolContext, input struct {
-			Query string `json:"query" jsonschema_description:"Article title (e.g. 'getting started', 'team building') or ID (e.g. '1')"`
-		}) (*ArticleToolResponse, error) {
-			slog.Info("tool getArticle", "query", input.Query)
+			Slug string `json:"slug" jsonschema_description:"Article slug from search results (e.g., 'getting-started', 'breeding-guide')"`
+		}) (*pokemon.AgentArticle, error) {
+			slog.Info("tool getArticle", "slug", input.Slug)
 
-			results, err := s.pokemon.SearchArticles(ctx, input.Query, 1)
+			if input.Slug == "" {
+				return nil, fmt.Errorf("slug is required")
+			}
+
+			article, err := s.pokemon.GetArticleBySlug(ctx, input.Slug)
 			if err != nil {
-				slog.Error("tool getArticle search failed", "error", err)
-				return &ArticleToolResponse{Error: err.Error()}, nil
-			}
-			if len(results) == 0 {
-				slog.Warn("tool getArticle not found", "query", input.Query)
-				return &ArticleToolResponse{Error: fmt.Sprintf("article not found: %s", input.Query)}, nil
+				slog.Error("tool getArticle failed", "error", err)
+				return nil, err
 			}
 
-			article, err := s.pokemon.GetArticleByID(ctx, strconv.Itoa(results[0].ID))
-			if err != nil {
-				slog.Error("tool getArticle fetch failed", "error", err)
-				return &ArticleToolResponse{Error: err.Error()}, nil
-			}
-
-			var categories []string
-			for _, c := range article.Categories {
-				categories = append(categories, c.Category.Name)
-			}
-
-			slog.Info("tool getArticle completed", "id", article.ID, "title", article.Title)
-			return &ArticleToolResponse{
-				ID:         article.ID,
-				Title:      article.Title,
-				Subtitle:   article.Subtitle,
-				Body:       article.Body,
-				Identifier: article.Identifier,
-				Categories: categories,
-			}, nil
+			slog.Info("tool getArticle completed", "title", article.Title)
+			return article, nil
 		},
 	)
 }

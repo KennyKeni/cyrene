@@ -3,9 +3,10 @@ package ingest
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"strconv"
 
 	"cyrene/internal/platform/vectorstore"
-	"cyrene/internal/pokemon"
 
 	"github.com/google/uuid"
 )
@@ -27,76 +28,91 @@ func NewService(embedService embedService, store vectorStore, pokemonService pok
 }
 
 func (s *service) Ingest(ctx context.Context, event IngestionEvent) error {
-	switch event.Type {
-	case EventTypeSpecies:
-		return s.ingestSpecies(ctx, event.ID)
-	case EventTypeVariation:
-		return s.ingestVariation(ctx, event.ID)
-	case EventTypeForm:
-		return s.ingestForm(ctx, event.ID)
-	case EventTypeMove:
-		return s.ingestMove(ctx, event.ID)
-	case EventTypeAbility:
-		return s.ingestAbility(ctx, event.ID)
-	case EventTypeArticle:
-		return s.ingestArticle(ctx, event.ID)
-	default:
-		return fmt.Errorf("unsupported event type: %s", event.Type)
+	if event.Operation == OperationDelete {
+		return s.handleDelete(ctx, event)
 	}
+
+	switch event.EntityType {
+	case EntityTypeSpecies:
+		return s.ingestSpecies(ctx, event.EntityID)
+	case EntityTypeForm:
+		return s.ingestForm(ctx, event.EntityID)
+	case EntityTypeMove:
+		return s.ingestMove(ctx, event.EntityID)
+	case EntityTypeAbility:
+		return s.ingestAbility(ctx, event.EntityID)
+	case EntityTypeItem:
+		return s.ingestItem(ctx, event.EntityID)
+	case EntityTypeArticle:
+		return s.ingestArticle(ctx, event.EntityID)
+	default:
+		return fmt.Errorf("unsupported entity type: %s", event.EntityType)
+	}
+}
+
+func (s *service) handleDelete(ctx context.Context, event IngestionEvent) error {
+	var docType DocumentType
+	var idKey string
+
+	switch event.EntityType {
+	case EntityTypeSpecies, EntityTypeForm:
+		docType = DocumentTypeForm
+		idKey = formIDKey
+	case EntityTypeMove:
+		docType = DocumentTypeMove
+		idKey = moveIDKey
+	case EntityTypeAbility:
+		docType = DocumentTypeAbility
+		idKey = abilityIDKey
+	case EntityTypeItem:
+		docType = DocumentTypeItem
+		idKey = itemIDKey
+	case EntityTypeArticle:
+		docType = DocumentTypeArticle
+		idKey = articleIDKey
+	default:
+		return fmt.Errorf("unsupported entity type for delete: %s", event.EntityType)
+	}
+
+	if err := s.store.Delete(ctx, vectorstore.Filter{
+		StringFilters: []vectorstore.StringFilter{
+			{Field: idKey, Value: event.EntityID, Op: vectorstore.FilterAND},
+		},
+	}); err != nil {
+		return fmt.Errorf("delete vectors: %w", err)
+	}
+
+	return s.repository.DeleteByRef(ctx, docType, event.EntityID)
 }
 
 func (s *service) ingestSpecies(ctx context.Context, id string) error {
-	err := s.store.Delete(ctx, vectorstore.Filter{
-		StringFilters: []vectorstore.StringFilter{
-			{Field: speciesIDKey, Value: id, Op: vectorstore.FilterAND},
-		},
-	})
+	species, err := s.pokemonService.GetSpecies(ctx, id)
 	if err != nil {
-		return fmt.Errorf("delete species vectors: %w", err)
+		return fmt.Errorf("fetch species: %w", err)
 	}
 
-	resp, err := s.pokemonService.SearchForms(ctx, pokemon.FormSearchParams{
-		SpeciesID: id,
-		Include:   []string{"stats", "types", "abilities", "moves", "variants"},
-		Limit:     100,
-	})
-	if err != nil {
-		return fmt.Errorf("fetch forms for species: %w", err)
-	}
-
-	for i := range resp.Data {
-		if err := s.ingestFormData(ctx, &resp.Data[i]); err != nil {
-			return fmt.Errorf("ingest form %s: %w", resp.Data[i].FormIdentifier, err)
-		}
-	}
-
-	return nil
-}
-
-func (s *service) ingestVariation(ctx context.Context, id string) error {
-	err := s.store.Delete(ctx, vectorstore.Filter{
-		StringFilters: []vectorstore.StringFilter{
-			{Field: variantIDsKey, Value: id, Op: vectorstore.FilterAND},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("delete variation vectors: %w", err)
-	}
-
-	resp, err := s.pokemonService.SearchForms(ctx, pokemon.FormSearchParams{
-		VariationID: id,
-		Include:     []string{"stats", "types", "abilities", "moves", "variants"},
-		Limit:       1,
-	})
-	if err != nil {
-		return fmt.Errorf("fetch form for variation: %w", err)
-	}
-
-	if len(resp.Data) == 0 {
+	if len(species.Forms) == 0 {
+		slog.Warn("species has no forms", "speciesId", id, "speciesName", species.Name)
 		return nil
 	}
 
-	return s.ingestFormData(ctx, &resp.Data[0])
+	slog.Info("ingesting species forms", "speciesId", id, "speciesName", species.Name, "formCount", len(species.Forms))
+
+	var lastErr error
+	for _, form := range species.Forms {
+		formID := strconv.Itoa(form.ID)
+		if err := s.ingestForm(ctx, formID); err != nil {
+			slog.Error("failed to ingest form", "speciesId", id, "formId", formID, "error", err)
+			lastErr = err
+			continue
+		}
+	}
+
+	if lastErr != nil {
+		slog.Warn("species ingestion completed with errors", "speciesId", id, "lastError", lastErr)
+	}
+
+	return nil
 }
 
 func (s *service) ingestForm(ctx context.Context, id string) error {
@@ -109,51 +125,37 @@ func (s *service) ingestForm(ctx context.Context, id string) error {
 		return fmt.Errorf("delete form vectors: %w", err)
 	}
 
-	resp, err := s.pokemonService.SearchForms(ctx, pokemon.FormSearchParams{
-		FormID:  id,
-		Include: []string{"stats", "types", "abilities", "moves", "variants"},
-		Limit:   1,
-	})
+	pokemon, err := s.pokemonService.GetPokemon(ctx, id)
 	if err != nil {
-		return fmt.Errorf("fetch form: %w", err)
+		return fmt.Errorf("fetch pokemon form: %w", err)
 	}
 
-	if len(resp.Data) == 0 {
-		return fmt.Errorf("form %s not found", id)
-	}
-
-	return s.ingestFormData(ctx, &resp.Data[0])
-}
-
-func (s *service) ingestFormData(ctx context.Context, form *pokemon.FormSearchResult) error {
-	content := form.EmbeddingText()
-
-	var variantIDs []any
-	for _, v := range form.PokemonVariations {
-		variantIDs = append(variantIDs, v.Identifier)
-	}
-
-	formID := fmt.Sprintf("%s:%s", form.Species.Identifier, form.FormIdentifier)
-
+	content := pokemon.EmbeddingText()
 	metadata := map[string]any{
-		typeKey:       string(DocumentTypeForm),
-		formIDKey:     formID,
-		speciesIDKey:  form.Species.Identifier,
-		variantIDsKey: variantIDs,
-		formNameKey:   form.FormName,
-		contentKey:    content,
+		typeKey:   string(DocumentTypeForm),
+		formIDKey: id,
+		contentKey: content,
 	}
 
 	return s.doIngest(ctx, ingestInput{
 		docType:  DocumentTypeForm,
-		id:       formID,
+		id:       id,
 		content:  content,
 		metadata: metadata,
 	})
 }
 
 func (s *service) ingestMove(ctx context.Context, id string) error {
-	move, err := s.pokemonService.GetMoveByID(ctx, id)
+	err := s.store.Delete(ctx, vectorstore.Filter{
+		StringFilters: []vectorstore.StringFilter{
+			{Field: moveIDKey, Value: id, Op: vectorstore.FilterAND},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("delete move vectors: %w", err)
+	}
+
+	move, err := s.pokemonService.GetMove(ctx, id)
 	if err != nil {
 		return fmt.Errorf("fetch move: %w", err)
 	}
@@ -174,7 +176,16 @@ func (s *service) ingestMove(ctx context.Context, id string) error {
 }
 
 func (s *service) ingestAbility(ctx context.Context, id string) error {
-	ability, err := s.pokemonService.GetAbilityByID(ctx, id)
+	err := s.store.Delete(ctx, vectorstore.Filter{
+		StringFilters: []vectorstore.StringFilter{
+			{Field: abilityIDKey, Value: id, Op: vectorstore.FilterAND},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("delete ability vectors: %w", err)
+	}
+
+	ability, err := s.pokemonService.GetAbility(ctx, id)
 	if err != nil {
 		return fmt.Errorf("fetch ability: %w", err)
 	}
@@ -194,8 +205,47 @@ func (s *service) ingestAbility(ctx context.Context, id string) error {
 	})
 }
 
+func (s *service) ingestItem(ctx context.Context, id string) error {
+	err := s.store.Delete(ctx, vectorstore.Filter{
+		StringFilters: []vectorstore.StringFilter{
+			{Field: itemIDKey, Value: id, Op: vectorstore.FilterAND},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("delete item vectors: %w", err)
+	}
+
+	item, err := s.pokemonService.GetItem(ctx, id)
+	if err != nil {
+		return fmt.Errorf("fetch item: %w", err)
+	}
+
+	content := item.EmbeddingText()
+	metadata := map[string]any{
+		typeKey:    string(DocumentTypeItem),
+		itemIDKey:  id,
+		contentKey: content,
+	}
+
+	return s.doIngest(ctx, ingestInput{
+		docType:  DocumentTypeItem,
+		id:       id,
+		content:  content,
+		metadata: metadata,
+	})
+}
+
 func (s *service) ingestArticle(ctx context.Context, id string) error {
-	article, err := s.pokemonService.GetArticleByID(ctx, id)
+	err := s.store.Delete(ctx, vectorstore.Filter{
+		StringFilters: []vectorstore.StringFilter{
+			{Field: articleIDKey, Value: id, Op: vectorstore.FilterAND},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("delete article vectors: %w", err)
+	}
+
+	article, err := s.pokemonService.GetArticle(ctx, id)
 	if err != nil {
 		return fmt.Errorf("fetch article: %w", err)
 	}

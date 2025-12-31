@@ -22,11 +22,13 @@ type service struct {
 	vectorStore vectorStore
 	cacheStore  vectorStore
 
-	searchPokemonTool ai.Tool
-	getMoveTool       ai.Tool
-	getAbilityTool    ai.Tool
-	getArticleTool    ai.Tool
-	searchTool        ai.Tool
+	searchPokemonTool   ai.Tool
+	searchMovesTool     ai.Tool
+	searchAbilitiesTool ai.Tool
+	searchItemsTool     ai.Tool
+	searchArticlesTool  ai.Tool
+	getArticleTool      ai.Tool
+	searchTool          ai.Tool
 }
 
 func NewService(clients *platformgenkit.Clients, pokemon pokemonService, store vectorStore, cacheStore vectorStore, chatStore chatStore) Service {
@@ -120,7 +122,7 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
 		ai.WithPrompt(prompt),
-		ai.WithTools(s.searchPokemonTool, s.getMoveTool, s.getAbilityTool, s.getArticleTool, s.searchTool),
+		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.searchArticlesTool, s.getArticleTool, s.searchTool),
 	)
 	if err != nil {
 		slog.Error("LLM generation failed", "error", err)
@@ -199,7 +201,7 @@ func (s *service) ChatStream(ctx context.Context, prompt string, user string, on
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
 		ai.WithPrompt(prompt),
-		ai.WithTools(s.searchPokemonTool, s.getMoveTool, s.getAbilityTool, s.getArticleTool, s.searchTool),
+		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.searchArticlesTool, s.getArticleTool, s.searchTool),
 		ai.WithStreaming(func(ctx context.Context, chunk *ai.ModelResponseChunk) error {
 			text := chunk.Text()
 			if text != "" {
@@ -347,47 +349,3 @@ func (s *service) rewritePrompt(ctx context.Context, query string, chatHistory [
 	return resp, nil
 }
 
-func (s *service) resolveTypes(ctx context.Context, queries []string) []string {
-	if len(queries) == 0 {
-		return nil
-	}
-	resolved := make([]string, 0, len(queries))
-	for _, q := range queries {
-		results, err := s.pokemon.SearchTypes(ctx, q, 1)
-		if err != nil || len(results) == 0 {
-			continue
-		}
-		resolved = append(resolved, results[0].Identifier)
-	}
-	return resolved
-}
-
-func (s *service) resolveAbilities(ctx context.Context, queries []string) []string {
-	if len(queries) == 0 {
-		return nil
-	}
-	resolved := make([]string, 0, len(queries))
-	for _, q := range queries {
-		results, err := s.pokemon.SearchAbilities(ctx, q, 1)
-		if err != nil || len(results) == 0 {
-			continue
-		}
-		resolved = append(resolved, results[0].Identifier)
-	}
-	return resolved
-}
-
-func (s *service) resolveMoves(ctx context.Context, queries []string) []string {
-	if len(queries) == 0 {
-		return nil
-	}
-	resolved := make([]string, 0, len(queries))
-	for _, q := range queries {
-		results, err := s.pokemon.SearchMoves(ctx, q, 1)
-		if err != nil || len(results) == 0 {
-			continue
-		}
-		resolved = append(resolved, results[0].Identifier)
-	}
-	return resolved
-}

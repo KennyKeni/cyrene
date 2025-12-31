@@ -1,38 +1,4 @@
 services:
-  app:
-    profiles:
-      - app
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: prod
-    restart: unless-stopped
-    ports:
-      - ${PORT}:${PORT}
-    environment:
-      APP_ENV: ${APP_ENV}
-      PORT: ${PORT}
-      DB_HOST: psql_cyrene
-      DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_SCHEMA: ${DB_SCHEMA}
-      REDIS_HOST: redis_cyrene
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      REDIS_DB: ${REDIS_DB:-0}
-      QDRANT_HOST: qdrant_cyrene
-      QDRANT_PORT: 6334
-    depends_on:
-      psql_cyrene:
-        condition: service_healthy
-      redis_cyrene:
-        condition: service_healthy
-      qdrant_cyrene:
-        condition: service_started
-    networks:
-      - cyrene
   psql_cyrene:
     image: postgres:latest
     restart: unless-stopped

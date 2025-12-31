@@ -16,16 +16,16 @@ const (
 	contentKey = "content"
 
 	// Form metadata
-	formIDKey     = "form_id"
-	speciesIDKey  = "species_id"
-	variantIDsKey = "variant_ids"
-	formNameKey   = "form_name"
+	formIDKey = "form_id"
 
 	// Move metadata
 	moveIDKey = "move_id"
 
 	// Ability metadata
 	abilityIDKey = "ability_id"
+
+	// Item metadata
+	itemIDKey = "item_id"
 
 	// Article metadata
 	articleIDKey = "article_id"
@@ -34,18 +34,26 @@ const (
 type Topic string
 
 const (
-	TopicIngestion Topic = "ingestion"
+	TopicIngestion Topic = "entity-events"
 )
 
-type EventType string
+type EntityType string
 
 const (
-	EventTypeSpecies   EventType = "species"
-	EventTypeVariation EventType = "variation"
-	EventTypeForm      EventType = "form"
-	EventTypeMove      EventType = "move"
-	EventTypeAbility   EventType = "ability"
-	EventTypeArticle   EventType = "article"
+	EntityTypeSpecies EntityType = "species"
+	EntityTypeForm    EntityType = "form"
+	EntityTypeMove    EntityType = "move"
+	EntityTypeAbility EntityType = "ability"
+	EntityTypeItem    EntityType = "item"
+	EntityTypeArticle EntityType = "article"
+)
+
+type Operation string
+
+const (
+	OperationCreate Operation = "CREATE"
+	OperationUpdate Operation = "UPDATE"
+	OperationDelete Operation = "DELETE"
 )
 
 type DocumentType string
@@ -54,6 +62,7 @@ const (
 	DocumentTypeForm    DocumentType = "form"
 	DocumentTypeMove    DocumentType = "move"
 	DocumentTypeAbility DocumentType = "ability"
+	DocumentTypeItem    DocumentType = "item"
 	DocumentTypeArticle DocumentType = "article"
 )
 
@@ -64,6 +73,7 @@ func (DocumentType) JSONSchema() *jsonschema.Schema {
 			string(DocumentTypeForm),
 			string(DocumentTypeMove),
 			string(DocumentTypeAbility),
+			string(DocumentTypeItem),
 			string(DocumentTypeArticle),
 		},
 	}
@@ -82,6 +92,7 @@ type IngestedDocument struct {
 }
 
 type IngestionEvent struct {
-	Type EventType `json:"type"`
-	ID   string    `json:"id"`
+	EntityType EntityType `json:"entityType"`
+	EntityID   string     `json:"entityId"`
+	Operation  Operation  `json:"operation"`
 }
