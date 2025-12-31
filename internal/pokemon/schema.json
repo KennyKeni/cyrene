@@ -20144,6 +20144,15 @@
             "required": false
           },
           {
+            "description": "Include Cobblemon spawn data (biomes, conditions, rarity). Can be large for Pokemon with many spawn entries",
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "includeSpawns",
+            "required": false
+          },
+          {
             "description": "Max results to return (1-100, default 5)",
             "schema": {
               "type": "number",
@@ -20571,6 +20580,293 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "spawns": {
+                            "description": "Cobblemon spawn locations and conditions",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "bucket": {
+                                  "description": "Spawn bucket (e.g., \"common\", \"uncommon\", \"rare\", \"ultra-rare\")",
+                                  "type": "string"
+                                },
+                                "positionType": {
+                                  "description": "Position type (e.g., \"land\", \"water\", \"seafloor\")",
+                                  "type": "string"
+                                },
+                                "weight": {
+                                  "description": "Spawn weight within bucket (higher = more common)",
+                                  "type": "number"
+                                },
+                                "levelMin": {
+                                  "description": "Minimum spawn level",
+                                  "type": "number"
+                                },
+                                "levelMax": {
+                                  "description": "Maximum spawn level",
+                                  "type": "number"
+                                },
+                                "presets": {
+                                  "description": "Spawn preset types (e.g., \"natural\", \"fishing\")",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "conditions": {
+                                  "description": "Spawn conditions and requirements",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "description": "Condition type (e.g., \"spawn\", \"requirement\")",
+                                        "type": "string"
+                                      },
+                                      "multiplier": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Spawn rate multiplier when condition is met",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "biomes": {
+                                        "description": "Required biome names",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "biomeTags": {
+                                        "description": "Required biome tag names (e.g., \"is_forest\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "timeRanges": {
+                                        "description": "Valid time ranges (e.g., \"day\", \"night\", \"dusk\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "moonPhases": {
+                                        "description": "Valid moon phases (e.g., \"full_moon\", \"new_moon\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "weather": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "isRaining": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must be raining (true), not raining (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "isThundering": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must be thundering (true), not thundering (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "isRaining",
+                                              "isThundering"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "sky": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "canSeeSky": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must have sky visibility (true), underground (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "minSkyLight": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum sky light level (0-15)",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxSkyLight": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum sky light level (0-15)",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "canSeeSky",
+                                              "minSkyLight",
+                                              "maxSkyLight"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "position": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "minY": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum Y coordinate",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxY": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum Y coordinate",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "minY",
+                                              "maxY"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "lure": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "minLureLevel": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum lure level required",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxLureLevel": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum lure level allowed",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "minLureLevel",
+                                              "maxLureLevel"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "multiplier",
+                                      "biomes",
+                                      "biomeTags",
+                                      "timeRanges",
+                                      "moonPhases",
+                                      "weather",
+                                      "sky",
+                                      "position",
+                                      "lure"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "bucket",
+                                "positionType",
+                                "weight",
+                                "levelMin",
+                                "levelMax",
+                                "presets",
+                                "conditions"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -21002,6 +21298,293 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "spawns": {
+                            "description": "Cobblemon spawn locations and conditions",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "bucket": {
+                                  "description": "Spawn bucket (e.g., \"common\", \"uncommon\", \"rare\", \"ultra-rare\")",
+                                  "type": "string"
+                                },
+                                "positionType": {
+                                  "description": "Position type (e.g., \"land\", \"water\", \"seafloor\")",
+                                  "type": "string"
+                                },
+                                "weight": {
+                                  "description": "Spawn weight within bucket (higher = more common)",
+                                  "type": "number"
+                                },
+                                "levelMin": {
+                                  "description": "Minimum spawn level",
+                                  "type": "number"
+                                },
+                                "levelMax": {
+                                  "description": "Maximum spawn level",
+                                  "type": "number"
+                                },
+                                "presets": {
+                                  "description": "Spawn preset types (e.g., \"natural\", \"fishing\")",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "conditions": {
+                                  "description": "Spawn conditions and requirements",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "description": "Condition type (e.g., \"spawn\", \"requirement\")",
+                                        "type": "string"
+                                      },
+                                      "multiplier": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Spawn rate multiplier when condition is met",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "biomes": {
+                                        "description": "Required biome names",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "biomeTags": {
+                                        "description": "Required biome tag names (e.g., \"is_forest\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "timeRanges": {
+                                        "description": "Valid time ranges (e.g., \"day\", \"night\", \"dusk\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "moonPhases": {
+                                        "description": "Valid moon phases (e.g., \"full_moon\", \"new_moon\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "weather": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "isRaining": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must be raining (true), not raining (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "isThundering": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must be thundering (true), not thundering (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "isRaining",
+                                              "isThundering"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "sky": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "canSeeSky": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must have sky visibility (true), underground (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "minSkyLight": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum sky light level (0-15)",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxSkyLight": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum sky light level (0-15)",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "canSeeSky",
+                                              "minSkyLight",
+                                              "maxSkyLight"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "position": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "minY": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum Y coordinate",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxY": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum Y coordinate",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "minY",
+                                              "maxY"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "lure": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "minLureLevel": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum lure level required",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxLureLevel": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum lure level allowed",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "minLureLevel",
+                                              "maxLureLevel"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "multiplier",
+                                      "biomes",
+                                      "biomeTags",
+                                      "timeRanges",
+                                      "moonPhases",
+                                      "weather",
+                                      "sky",
+                                      "position",
+                                      "lure"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "bucket",
+                                "positionType",
+                                "weight",
+                                "levelMin",
+                                "levelMax",
+                                "presets",
+                                "conditions"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -21433,6 +22016,293 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "spawns": {
+                            "description": "Cobblemon spawn locations and conditions",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "bucket": {
+                                  "description": "Spawn bucket (e.g., \"common\", \"uncommon\", \"rare\", \"ultra-rare\")",
+                                  "type": "string"
+                                },
+                                "positionType": {
+                                  "description": "Position type (e.g., \"land\", \"water\", \"seafloor\")",
+                                  "type": "string"
+                                },
+                                "weight": {
+                                  "description": "Spawn weight within bucket (higher = more common)",
+                                  "type": "number"
+                                },
+                                "levelMin": {
+                                  "description": "Minimum spawn level",
+                                  "type": "number"
+                                },
+                                "levelMax": {
+                                  "description": "Maximum spawn level",
+                                  "type": "number"
+                                },
+                                "presets": {
+                                  "description": "Spawn preset types (e.g., \"natural\", \"fishing\")",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "conditions": {
+                                  "description": "Spawn conditions and requirements",
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "description": "Condition type (e.g., \"spawn\", \"requirement\")",
+                                        "type": "string"
+                                      },
+                                      "multiplier": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "description": "Spawn rate multiplier when condition is met",
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "biomes": {
+                                        "description": "Required biome names",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "biomeTags": {
+                                        "description": "Required biome tag names (e.g., \"is_forest\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "timeRanges": {
+                                        "description": "Valid time ranges (e.g., \"day\", \"night\", \"dusk\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "moonPhases": {
+                                        "description": "Valid moon phases (e.g., \"full_moon\", \"new_moon\")",
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "weather": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "isRaining": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must be raining (true), not raining (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "isThundering": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must be thundering (true), not thundering (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "isRaining",
+                                              "isThundering"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "sky": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "canSeeSky": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Must have sky visibility (true), underground (false), or any (null)",
+                                                    "type": "boolean"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "minSkyLight": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum sky light level (0-15)",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxSkyLight": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum sky light level (0-15)",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "canSeeSky",
+                                              "minSkyLight",
+                                              "maxSkyLight"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "position": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "minY": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum Y coordinate",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxY": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum Y coordinate",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "minY",
+                                              "maxY"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "lure": {
+                                        "nullable": true,
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "minLureLevel": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Minimum lure level required",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              },
+                                              "maxLureLevel": {
+                                                "nullable": true,
+                                                "anyOf": [
+                                                  {
+                                                    "description": "Maximum lure level allowed",
+                                                    "type": "number"
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "minLureLevel",
+                                              "maxLureLevel"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "multiplier",
+                                      "biomes",
+                                      "biomeTags",
+                                      "timeRanges",
+                                      "moonPhases",
+                                      "weather",
+                                      "sky",
+                                      "position",
+                                      "lure"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "bucket",
+                                "positionType",
+                                "weight",
+                                "levelMin",
+                                "levelMax",
+                                "presets",
+                                "conditions"
+                              ]
+                            }
                           }
                         },
                         "required": [

@@ -16,11 +16,12 @@ import (
 )
 
 type service struct {
-	clients     *platformgenkit.Clients
-	pokemon     pokemonService
-	chatStore   chatStore
-	vectorStore vectorStore
-	cacheStore  vectorStore
+	clients      *platformgenkit.Clients
+	pokemon      pokemonService
+	chatStore    chatStore
+	vectorStore  vectorStore
+	cacheStore   vectorStore
+	cacheEnabled bool
 
 	searchPokemonTool   ai.Tool
 	searchMovesTool     ai.Tool
@@ -31,13 +32,14 @@ type service struct {
 	searchTool          ai.Tool
 }
 
-func NewService(clients *platformgenkit.Clients, pokemon pokemonService, store vectorStore, cacheStore vectorStore, chatStore chatStore) Service {
+func NewService(clients *platformgenkit.Clients, pokemon pokemonService, store vectorStore, cacheStore vectorStore, chatStore chatStore, cacheEnabled bool) Service {
 	s := &service{
-		clients:     clients,
-		pokemon:     pokemon,
-		vectorStore: store,
-		cacheStore:  cacheStore,
-		chatStore:   chatStore,
+		clients:      clients,
+		pokemon:      pokemon,
+		vectorStore:  store,
+		cacheStore:   cacheStore,
+		chatStore:    chatStore,
+		cacheEnabled: cacheEnabled,
 	}
 	s.registerTools(clients.Genkit)
 	return s
@@ -99,22 +101,25 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 
 	slog.Info("prompt rewritten", "prompt", newPrompt.Prompt)
 
-	embeddings, err := s.Embed(ctx, s.cacheStore.Dimensions(), newPrompt.Prompt)
-	if err != nil {
-		slog.Error("failed to embed prompt", "error", err)
-		return "", err
-	}
-	embedding := embeddings[0]
-
-	if cached, err := s.findCachedAnswer(ctx, prompt, embedding); err == nil && cached != nil {
-		slog.Info("cache hit", "cached_question", cached.Question)
-		if err := s.chatStore.Append(ctx, user,
-			ai.NewUserTextMessage(prompt),
-			ai.NewModelTextMessage(cached.Answer),
-		); err != nil {
-			slog.Warn("failed to append chat history", "error", err)
+	var embedding []float32
+	if s.cacheEnabled {
+		embeddings, err := s.Embed(ctx, s.cacheStore.Dimensions(), newPrompt.Prompt)
+		if err != nil {
+			slog.Error("failed to embed prompt", "error", err)
+			return "", err
 		}
-		return cached.Answer, nil
+		embedding = embeddings[0]
+
+		if cached, err := s.findCachedAnswer(ctx, prompt, embedding); err == nil && cached != nil {
+			slog.Info("cache hit", "cached_question", cached.Question)
+			if err := s.chatStore.Append(ctx, user,
+				ai.NewUserTextMessage(prompt),
+				ai.NewModelTextMessage(cached.Answer),
+			); err != nil {
+				slog.Warn("failed to append chat history", "error", err)
+			}
+			return cached.Answer, nil
+		}
 	}
 	slog.Info("cache miss, calling LLM")
 
@@ -133,10 +138,12 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 	}
 
 	answer = resp.Text()
-	if err := s.storeCachedAnswer(ctx, newPrompt.Prompt, embedding, answer); err != nil {
-		slog.Warn("failed to cache answer", "error", err)
-	} else {
-		slog.Info("cached answer stored")
+	if s.cacheEnabled {
+		if err := s.storeCachedAnswer(ctx, newPrompt.Prompt, embedding, answer); err != nil {
+			slog.Warn("failed to cache answer", "error", err)
+		} else {
+			slog.Info("cached answer stored")
+		}
 	}
 
 	if err := s.chatStore.Append(ctx, user,
@@ -177,22 +184,25 @@ func (s *service) ChatStream(ctx context.Context, prompt string, user string, on
 		prompt = newPrompt.Prompt
 	}
 
-	embeddings, err := s.Embed(ctx, s.cacheStore.Dimensions(), newPrompt.Prompt)
-	if err != nil {
-		slog.Error("failed to embed prompt", "error", err)
-		return err
-	}
-	embedding := embeddings[0]
-
-	if cached, err := s.findCachedAnswer(ctx, prompt, embedding); err == nil && cached != nil {
-		slog.Info("cache hit (stream)", "cached_question", cached.Question)
-		if err := s.chatStore.Append(ctx, user,
-			ai.NewUserTextMessage(prompt),
-			ai.NewModelTextMessage(cached.Answer),
-		); err != nil {
-			slog.Warn("failed to append chat history", "error", err)
+	var embedding []float32
+	if s.cacheEnabled {
+		embeddings, err := s.Embed(ctx, s.cacheStore.Dimensions(), newPrompt.Prompt)
+		if err != nil {
+			slog.Error("failed to embed prompt", "error", err)
+			return err
 		}
-		return onChunk(cached.Answer)
+		embedding = embeddings[0]
+
+		if cached, err := s.findCachedAnswer(ctx, prompt, embedding); err == nil && cached != nil {
+			slog.Info("cache hit (stream)", "cached_question", cached.Question)
+			if err := s.chatStore.Append(ctx, user,
+				ai.NewUserTextMessage(prompt),
+				ai.NewModelTextMessage(cached.Answer),
+			); err != nil {
+				slog.Warn("failed to append chat history", "error", err)
+			}
+			return onChunk(cached.Answer)
+		}
 	}
 	slog.Info("cache miss, streaming from LLM")
 
@@ -224,10 +234,12 @@ func (s *service) ChatStream(ctx context.Context, prompt string, user string, on
 		fullAnswer = answer.String()
 	}
 
-	if err := s.storeCachedAnswer(ctx, newPrompt.Prompt, embedding, fullAnswer); err != nil {
-		slog.Warn("failed to cache answer", "error", err)
-	} else {
-		slog.Info("cached answer stored")
+	if s.cacheEnabled {
+		if err := s.storeCachedAnswer(ctx, newPrompt.Prompt, embedding, fullAnswer); err != nil {
+			slog.Warn("failed to cache answer", "error", err)
+		} else {
+			slog.Info("cached answer stored")
+		}
 	}
 
 	if err := s.chatStore.Append(ctx, user,

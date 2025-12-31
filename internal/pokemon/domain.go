@@ -216,6 +216,7 @@ type AgentPokemonParams struct {
 	IncludeLighting    bool
 	IncludeRiding      bool
 	IncludeBehaviour   bool
+	IncludeSpawns      bool
 	Limit              int
 	Offset             int
 }

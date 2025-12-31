@@ -53,6 +53,12 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 			IncludeEggGroups   bool     `json:"includeEggGroups,omitempty" jsonschema_description:"Include egg group information."`
 			IncludeExpGroup    bool     `json:"includeExpGroup,omitempty" jsonschema_description:"Include experience group."`
 			IncludeLabels      bool     `json:"includeLabels,omitempty" jsonschema_description:"Include labels (legendary, starter, etc.)."`
+			IncludeAspects     bool     `json:"includeAspects,omitempty" jsonschema_description:"Include aspect/variant information."`
+			IncludeHitboxes    bool     `json:"includeHitboxes,omitempty" jsonschema_description:"Include hitbox dimensions."`
+			IncludeLighting    bool     `json:"includeLighting,omitempty" jsonschema_description:"Include lighting/glow effects."`
+			IncludeRiding      bool     `json:"includeRiding,omitempty" jsonschema_description:"Include riding/mount data."`
+			IncludeBehaviour   bool     `json:"includeBehaviour,omitempty" jsonschema_description:"Include AI behaviour patterns."`
+			IncludeSpawns      bool     `json:"includeSpawns,omitempty" jsonschema_description:"Include spawn location and condition data."`
 			Limit              int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset             int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
 		}) (*pokemon.PaginatedResponse[pokemon.AgentPokemon], error) {
@@ -97,6 +103,12 @@ func (s *service) defineSearchPokemonTool(g *genkit.Genkit) ai.Tool {
 				IncludeEggGroups:   input.IncludeEggGroups,
 				IncludeExpGroup:    input.IncludeExpGroup,
 				IncludeLabels:      input.IncludeLabels,
+				IncludeAspects:     input.IncludeAspects,
+				IncludeHitboxes:    input.IncludeHitboxes,
+				IncludeLighting:    input.IncludeLighting,
+				IncludeRiding:      input.IncludeRiding,
+				IncludeBehaviour:   input.IncludeBehaviour,
+				IncludeSpawns:      input.IncludeSpawns,
 				Limit:              limit,
 				Offset:             input.Offset,
 			}

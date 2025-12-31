@@ -104,7 +104,7 @@ func main() {
 	vectorStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.Collection, int(cfg.Qdrant.CollectionDim))
 	cacheStore := vectorstore.NewQdrantStore(qdrantClient, cfg.Qdrant.CacheCollection, int(cfg.Qdrant.CacheCollectionDim))
 	pokemonSvc := pokemon.NewService(cfg.PokemonAPI)
-	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, cacheStore, ragChatStore)
+	ragSvc := rag.NewService(genkitClients, pokemonSvc, vectorStore, cacheStore, ragChatStore, cfg.Qdrant.CacheEnabled)
 	ingestRepo := ingest.NewRepository(pgDB.DB())
 	ingestSvc := ingest.NewService(ragSvc, vectorStore, pokemonSvc, ingestRepo)
 
