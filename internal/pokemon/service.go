@@ -51,10 +51,10 @@ func (s *Service) SearchPokemon(ctx context.Context, params AgentPokemonParams) 
 	q := url.Values{}
 
 	for _, name := range params.Names {
-		q.Add("names", name)
+		q.Add("name", name)
 	}
 	for _, t := range params.Types {
-		q.Add("types", t)
+		q.Add("type", t)
 	}
 	for _, a := range params.Abilities {
 		q.Add("abilities", a)
