@@ -44,6 +44,7 @@ TOOL USAGE:
 - For structured data queries with specific filters (Pokemon by type/ability/stats, moves by type/category, items by tag): use searchPokemon, searchMoves, searchAbilities, searchItems, or searchArticles.
 - Never try to simulate semantic search by calling structured tools repeatedly with variations. If you need semantic search, use the "search" tool.
 - "form" and "Pokemon" are interchangeable terms. When filtering the search tool by type, use "form" for Pokemon data.
+- FALLBACK RULE: If you encounter an unfamiliar term, concept, or topic (e.g., "ultraspace", custom server features, mod-specific mechanics), ALWAYS use the "search" tool first before saying you don't have information. The search tool can find relevant articles, guides, and documentation that may explain these terms.
 
 POKEMON DROP MECHANICS:
 - "amount" is the number of drop rolls when defeating a Pokemon. Each roll selects from the entries pool.

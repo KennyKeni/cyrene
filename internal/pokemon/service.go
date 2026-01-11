@@ -54,7 +54,7 @@ func (s *Service) SearchPokemon(ctx context.Context, params AgentPokemonParams) 
 		q.Add("name", name)
 	}
 	for _, t := range params.Types {
-		q.Add("type", t)
+		q.Add("types", t)
 	}
 	for _, a := range params.Abilities {
 		q.Add("abilities", a)
@@ -161,7 +161,7 @@ func (s *Service) SearchMoves(ctx context.Context, params AgentMoveParams) (*Pag
 	q := url.Values{}
 
 	for _, name := range params.Names {
-		q.Add("names", name)
+		q.Add("name", name)
 	}
 	for _, t := range params.Types {
 		q.Add("types", t)
@@ -214,7 +214,7 @@ func (s *Service) SearchAbilities(ctx context.Context, params AgentAbilityParams
 	q := url.Values{}
 
 	for _, name := range params.Names {
-		q.Add("names", name)
+		q.Add("name", name)
 	}
 
 	if params.IncludeDescription {
@@ -252,7 +252,7 @@ func (s *Service) SearchItems(ctx context.Context, params AgentItemParams) (*Pag
 	q := url.Values{}
 
 	for _, name := range params.Names {
-		q.Add("names", name)
+		q.Add("name", name)
 	}
 	for _, tag := range params.Tags {
 		q.Add("tags", tag)
@@ -299,7 +299,7 @@ func (s *Service) SearchArticles(ctx context.Context, params AgentArticleParams)
 	q := url.Values{}
 
 	for _, title := range params.Titles {
-		q.Add("titles", title)
+		q.Add("title", title)
 	}
 	for _, cat := range params.Categories {
 		q.Add("categories", cat)
