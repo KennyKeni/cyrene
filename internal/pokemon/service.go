@@ -305,8 +305,8 @@ func (s *Service) SearchArticles(ctx context.Context, params AgentArticleParams)
 		q.Add("categories", cat)
 	}
 
-	if params.IncludeBody {
-		q.Set("includeBody", "true")
+	if params.IncludeContent {
+		q.Set("includeContent", "true")
 	}
 	if params.IncludeCategories {
 		q.Set("includeCategories", "true")

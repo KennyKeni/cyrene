@@ -240,7 +240,7 @@ type AgentArticleSearch struct {
 	Slug        string   `json:"slug"`
 	Subtitle    *string  `json:"subtitle,omitempty"`
 	Description *string  `json:"description,omitempty"`
-	Body        string   `json:"body,omitempty"`
+	Body        string   `json:"content,omitempty"`
 	Author      *string  `json:"author,omitempty"`
 	Categories  []string `json:"categories,omitempty"`
 }
@@ -251,7 +251,7 @@ type AgentArticle struct {
 	Title       string  `json:"title"`
 	Subtitle    *string `json:"subtitle"`
 	Description *string `json:"description"`
-	Body        string  `json:"body"`
+	Body        string  `json:"content"`
 	Author      *string `json:"author"`
 	CreatedAt   string  `json:"createdAt"`
 	UpdatedAt   string  `json:"updatedAt"`
@@ -324,7 +324,7 @@ type AgentItemParams struct {
 type AgentArticleParams struct {
 	Titles            []string
 	Categories        []string
-	IncludeBody       bool
+	IncludeContent    bool
 	IncludeCategories bool
 	Limit             int
 	Offset            int
@@ -456,7 +456,7 @@ type Article struct {
 	Title       string            `json:"title"`
 	Subtitle    *string           `json:"subtitle"`
 	Description *string           `json:"description"`
-	Body        string            `json:"body"`
+	Body        string            `json:"content"`
 	Author      *string           `json:"author"`
 	CreatedAt   string            `json:"createdAt"`
 	UpdatedAt   string            `json:"updatedAt"`
@@ -476,11 +476,11 @@ func (p *Pokemon) EmbeddingText() string {
 	var sb strings.Builder
 
 	if p.Form != nil {
-		sb.WriteString(fmt.Sprintf("Pokemon: %s\n", p.Form.FullName))
+		fmt.Fprintf(&sb, "Pokemon: %s\n", p.Form.FullName)
 	} else {
-		sb.WriteString(fmt.Sprintf("Pokemon: %s\n", p.Name))
+		fmt.Fprintf(&sb, "Pokemon: %s\n", p.Name)
 	}
-	sb.WriteString(fmt.Sprintf("Generation: %d\n", p.Generation))
+	fmt.Fprintf(&sb, "Generation: %d\n", p.Generation)
 
 	if p.Form != nil {
 		if len(p.Form.Types) > 0 {
@@ -488,7 +488,7 @@ func (p *Pokemon) EmbeddingText() string {
 			for _, t := range p.Form.Types {
 				types = append(types, t.Type.Name)
 			}
-			sb.WriteString(fmt.Sprintf("Types: %s\n", strings.Join(types, ", ")))
+			fmt.Fprintf(&sb, "Types: %s\n", strings.Join(types, ", "))
 		}
 
 		if len(p.Form.Abilities) > 0 {
@@ -500,12 +500,12 @@ func (p *Pokemon) EmbeddingText() string {
 				}
 				abilities = append(abilities, name)
 			}
-			sb.WriteString(fmt.Sprintf("Abilities: %s\n", strings.Join(abilities, ", ")))
+			fmt.Fprintf(&sb, "Abilities: %s\n", strings.Join(abilities, ", "))
 		}
 
-		sb.WriteString(fmt.Sprintf("Stats: HP %d, Atk %d, Def %d, SpA %d, SpD %d, Spe %d\n",
+		fmt.Fprintf(&sb, "Stats: HP %d, Atk %d, Def %d, SpA %d, SpD %d, Spe %d\n",
 			p.Form.BaseHP, p.Form.BaseAttack, p.Form.BaseDefence,
-			p.Form.BaseSpecialAttack, p.Form.BaseSpecialDefence, p.Form.BaseSpeed))
+			p.Form.BaseSpecialAttack, p.Form.BaseSpecialDefence, p.Form.BaseSpeed)
 
 		if len(p.Form.Moves) > 0 {
 			var moves []string
@@ -515,7 +515,7 @@ func (p *Pokemon) EmbeddingText() string {
 				}
 				moves = append(moves, m.Move.Name)
 			}
-			sb.WriteString(fmt.Sprintf("Moves: %s\n", strings.Join(moves, ", ")))
+			fmt.Fprintf(&sb, "Moves: %s\n", strings.Join(moves, ", "))
 		}
 
 		if len(p.Form.Labels) > 0 {
@@ -523,7 +523,7 @@ func (p *Pokemon) EmbeddingText() string {
 			for _, l := range p.Form.Labels {
 				labels = append(labels, l.Name)
 			}
-			sb.WriteString(fmt.Sprintf("Labels: %s\n", strings.Join(labels, ", ")))
+			fmt.Fprintf(&sb, "Labels: %s\n", strings.Join(labels, ", "))
 		}
 	}
 
@@ -532,11 +532,11 @@ func (p *Pokemon) EmbeddingText() string {
 		for _, g := range p.EggGroups {
 			groups = append(groups, g.Name)
 		}
-		sb.WriteString(fmt.Sprintf("Egg Groups: %s\n", strings.Join(groups, ", ")))
+		fmt.Fprintf(&sb, "Egg Groups: %s\n", strings.Join(groups, ", "))
 	}
 
-	sb.WriteString(fmt.Sprintf("Catch Rate: %d\n", p.CatchRate))
-	sb.WriteString(fmt.Sprintf("Base Friendship: %d\n", p.BaseFriendship))
+	fmt.Fprintf(&sb, "Catch Rate: %d\n", p.CatchRate)
+	fmt.Fprintf(&sb, "Base Friendship: %d\n", p.BaseFriendship)
 
 	return sb.String()
 }
@@ -544,27 +544,27 @@ func (p *Pokemon) EmbeddingText() string {
 func (m *Move) EmbeddingText() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Move: %s\n", m.Name))
-	sb.WriteString(fmt.Sprintf("Type: %s\n", m.Type.Name))
-	sb.WriteString(fmt.Sprintf("Category: %s\n", m.Category.Name))
+	fmt.Fprintf(&sb, "Move: %s\n", m.Name)
+	fmt.Fprintf(&sb, "Type: %s\n", m.Type.Name)
+	fmt.Fprintf(&sb, "Category: %s\n", m.Category.Name)
 
 	if m.Power != nil {
-		sb.WriteString(fmt.Sprintf("Power: %d\n", *m.Power))
+		fmt.Fprintf(&sb, "Power: %d\n", *m.Power)
 	}
 	if m.Accuracy != nil {
-		sb.WriteString(fmt.Sprintf("Accuracy: %d\n", *m.Accuracy))
+		fmt.Fprintf(&sb, "Accuracy: %d\n", *m.Accuracy)
 	}
-	sb.WriteString(fmt.Sprintf("PP: %d\n", m.PP))
-	sb.WriteString(fmt.Sprintf("Priority: %d\n", m.Priority))
+	fmt.Fprintf(&sb, "PP: %d\n", m.PP)
+	fmt.Fprintf(&sb, "Priority: %d\n", m.Priority)
 
 	if m.Target != nil {
-		sb.WriteString(fmt.Sprintf("Target: %s\n", m.Target.Name))
+		fmt.Fprintf(&sb, "Target: %s\n", m.Target.Name)
 	}
 
 	if m.ShortDesc != nil && *m.ShortDesc != "" {
-		sb.WriteString(fmt.Sprintf("Effect: %s\n", *m.ShortDesc))
+		fmt.Fprintf(&sb, "Effect: %s\n", *m.ShortDesc)
 	} else if m.Desc != nil && *m.Desc != "" {
-		sb.WriteString(fmt.Sprintf("Effect: %s\n", *m.Desc))
+		fmt.Fprintf(&sb, "Effect: %s\n", *m.Desc)
 	}
 
 	if len(m.Flags) > 0 {
@@ -572,7 +572,7 @@ func (m *Move) EmbeddingText() string {
 		for _, f := range m.Flags {
 			flags = append(flags, f.Name)
 		}
-		sb.WriteString(fmt.Sprintf("Flags: %s\n", strings.Join(flags, ", ")))
+		fmt.Fprintf(&sb, "Flags: %s\n", strings.Join(flags, ", "))
 	}
 
 	return sb.String()
@@ -581,12 +581,12 @@ func (m *Move) EmbeddingText() string {
 func (a *Ability) EmbeddingText() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Ability: %s\n", a.Name))
+	fmt.Fprintf(&sb, "Ability: %s\n", a.Name)
 
 	if a.ShortDesc != nil && *a.ShortDesc != "" {
-		sb.WriteString(fmt.Sprintf("Description: %s\n", *a.ShortDesc))
+		fmt.Fprintf(&sb, "Description: %s\n", *a.ShortDesc)
 	} else if a.Desc != nil && *a.Desc != "" {
-		sb.WriteString(fmt.Sprintf("Description: %s\n", *a.Desc))
+		fmt.Fprintf(&sb, "Description: %s\n", *a.Desc)
 	}
 
 	if len(a.Flags) > 0 {
@@ -594,7 +594,7 @@ func (a *Ability) EmbeddingText() string {
 		for _, f := range a.Flags {
 			flags = append(flags, f.Name)
 		}
-		sb.WriteString(fmt.Sprintf("Flags: %s\n", strings.Join(flags, ", ")))
+		fmt.Fprintf(&sb, "Flags: %s\n", strings.Join(flags, ", "))
 	}
 
 	return sb.String()
@@ -603,12 +603,12 @@ func (a *Ability) EmbeddingText() string {
 func (i *Item) EmbeddingText() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Item: %s\n", i.Name))
+	fmt.Fprintf(&sb, "Item: %s\n", i.Name)
 
 	if i.ShortDesc != nil && *i.ShortDesc != "" {
-		sb.WriteString(fmt.Sprintf("Description: %s\n", *i.ShortDesc))
+		fmt.Fprintf(&sb, "Description: %s\n", *i.ShortDesc)
 	} else if i.Desc != nil && *i.Desc != "" {
-		sb.WriteString(fmt.Sprintf("Description: %s\n", *i.Desc))
+		fmt.Fprintf(&sb, "Description: %s\n", *i.Desc)
 	}
 
 	if len(i.Boosts) > 0 {
@@ -616,7 +616,7 @@ func (i *Item) EmbeddingText() string {
 		for _, b := range i.Boosts {
 			boosts = append(boosts, fmt.Sprintf("%s %+d", b.Stat.Name, b.Stages))
 		}
-		sb.WriteString(fmt.Sprintf("Boosts: %s\n", strings.Join(boosts, ", ")))
+		fmt.Fprintf(&sb, "Boosts: %s\n", strings.Join(boosts, ", "))
 	}
 
 	if len(i.Tags) > 0 {
@@ -624,7 +624,7 @@ func (i *Item) EmbeddingText() string {
 		for _, t := range i.Tags {
 			tags = append(tags, t.Name)
 		}
-		sb.WriteString(fmt.Sprintf("Tags: %s\n", strings.Join(tags, ", ")))
+		fmt.Fprintf(&sb, "Tags: %s\n", strings.Join(tags, ", "))
 	}
 
 	return sb.String()
@@ -633,14 +633,14 @@ func (i *Item) EmbeddingText() string {
 func (a *Article) EmbeddingText() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Article: %s\n", a.Title))
+	fmt.Fprintf(&sb, "Article: %s\n", a.Title)
 
 	if a.Subtitle != nil && *a.Subtitle != "" {
-		sb.WriteString(fmt.Sprintf("Subtitle: %s\n", *a.Subtitle))
+		fmt.Fprintf(&sb, "Subtitle: %s\n", *a.Subtitle)
 	}
 
 	if a.Author != nil && *a.Author != "" {
-		sb.WriteString(fmt.Sprintf("Author: %s\n", *a.Author))
+		fmt.Fprintf(&sb, "Author: %s\n", *a.Author)
 	}
 
 	if len(a.Categories) > 0 {
@@ -648,14 +648,14 @@ func (a *Article) EmbeddingText() string {
 		for _, c := range a.Categories {
 			cats = append(cats, c.Name)
 		}
-		sb.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(cats, ", ")))
+		fmt.Fprintf(&sb, "Categories: %s\n", strings.Join(cats, ", "))
 	}
 
 	if a.Description != nil && *a.Description != "" {
-		sb.WriteString(fmt.Sprintf("Description: %s\n", *a.Description))
+		fmt.Fprintf(&sb, "Description: %s\n", *a.Description)
 	}
 
-	sb.WriteString(fmt.Sprintf("\n%s\n", a.Body))
+	fmt.Fprintf(&sb, "\n%s\n", a.Body)
 
 	return sb.String()
 }

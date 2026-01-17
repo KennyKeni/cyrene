@@ -375,11 +375,11 @@ func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"searchArticles",
-		`Search articles by title or category. Returns article metadata. Use include flags to control response size. Use getArticle to fetch full article body by slug.`,
+		`Search articles by title or category. Returns article metadata. Use include flags to control response size. Use getArticle to fetch full article content by slug.`,
 		func(ctx *ai.ToolContext, input struct {
 			Titles            []string `json:"titles,omitempty" jsonschema_description:"Fuzzy match article titles (e.g., ['breeding', 'ev training'])"`
 			Categories        []string `json:"categories,omitempty" jsonschema_description:"Filter by category names (e.g., ['guide', 'tutorial'])"`
-			IncludeBody       bool     `json:"includeBody,omitempty" jsonschema_description:"Include full article body content."`
+			IncludeContent    bool     `json:"includeContent,omitempty" jsonschema_description:"Include full article content."`
 			IncludeCategories bool     `json:"includeCategories,omitempty" jsonschema_description:"Include article categories."`
 			Limit             int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset            int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
@@ -397,7 +397,7 @@ func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
 			params := pokemon.AgentArticleParams{
 				Titles:            input.Titles,
 				Categories:        input.Categories,
-				IncludeBody:       input.IncludeBody,
+				IncludeContent:    input.IncludeContent,
 				IncludeCategories: input.IncludeCategories,
 				Limit:             limit,
 				Offset:            input.Offset,
@@ -428,7 +428,7 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"getArticle",
-		`Fetch a specific article by its slug. Use this after searchArticles to get the full article body.`,
+		`Fetch a specific article by its slug. Use this after searchArticles to get the full article content.`,
 		func(ctx *ai.ToolContext, input struct {
 			Slug string `json:"slug" jsonschema_description:"Article slug from search results (e.g., 'getting-started', 'breeding-guide')"`
 		}) (*ArticleToolResponse, error) {
