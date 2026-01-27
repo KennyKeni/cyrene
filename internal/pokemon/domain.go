@@ -69,7 +69,7 @@ type AgentPokemonAbility struct {
 type AgentPokemonMove struct {
 	Name   string `json:"name"`
 	Method string `json:"method"`
-	Level  *int   `json:"level"`
+	Level  *int   `json:"level,omitempty"`
 }
 
 type AgentDrop struct {
@@ -82,7 +82,7 @@ type AgentDrop struct {
 type AgentBreeding struct {
 	EggCycles      int      `json:"eggCycles"`
 	BaseFriendship int      `json:"baseFriendship"`
-	MaleRatio      *float64 `json:"maleRatio"`
+	MaleRatio      *float64 `json:"maleRatio,omitempty"`
 }
 
 type AgentCosmetics struct {
@@ -98,7 +98,7 @@ type AgentHitbox struct {
 
 type AgentLighting struct {
 	LightLevel    int     `json:"lightLevel"`
-	LiquidGlowMode *string `json:"liquidGlowMode"`
+	LiquidGlowMode *string `json:"liquidGlowMode,omitempty"`
 }
 
 type AgentRiding struct {
@@ -122,10 +122,10 @@ type AgentSpawn struct {
 type AgentSpawnCondition struct {
 	Type       string             `json:"type"`
 	Multiplier *float64           `json:"multiplier,omitempty"`
-	Biomes     []string           `json:"biomes,omitempty"`
-	BiomeTags  []string           `json:"biomeTags,omitempty"`
-	TimeRanges []string           `json:"timeRanges,omitempty"`
-	MoonPhases []string           `json:"moonPhases,omitempty"`
+	Biomes     []string           `json:"biomes"`
+	BiomeTags  []string           `json:"biomeTags"`
+	TimeRanges []string           `json:"timeRanges"`
+	MoonPhases []string           `json:"moonPhases"`
 	Weather    *AgentSpawnWeather `json:"weather,omitempty"`
 	Sky        *AgentSpawnSky     `json:"sky,omitempty"`
 	Position   *AgentSpawnPos     `json:"position,omitempty"`
@@ -158,8 +158,8 @@ type AgentMove struct {
 	Slug      string            `json:"slug"`
 	Type      string            `json:"type"`
 	Category  string            `json:"category"`
-	Power     *int              `json:"power"`
-	Accuracy  *int              `json:"accuracy"`
+	Power     *int              `json:"power,omitempty"`
+	Accuracy  *int              `json:"accuracy,omitempty"`
 	PP        int               `json:"pp"`
 	Priority  int               `json:"priority"`
 	Target    *string           `json:"target,omitempty"`
@@ -185,9 +185,9 @@ type AgentMoveEffect struct {
 }
 
 type AgentZData struct {
-	ZPower       *int    `json:"zPower"`
-	ZEffect      *string `json:"zEffect"`
-	ZCrystal     *string `json:"zCrystal"`
+	ZPower       *int    `json:"zPower,omitempty"`
+	ZEffect      *string `json:"zEffect,omitempty"`
+	ZCrystal     *string `json:"zCrystal,omitempty"`
 	IsZExclusive bool    `json:"isZExclusive"`
 }
 
@@ -225,13 +225,13 @@ type AgentItemRecipe struct {
 
 type AgentItemRecipeInput struct {
 	Item     string  `json:"item"`
-	Slot     *int    `json:"slot"`
+	Slot     *int    `json:"slot,omitempty"`
 	SlotType *string `json:"slotType,omitempty"`
 }
 
 type AgentItemRecipeTagInput struct {
 	Tag      string  `json:"tag"`
-	Slot     *int    `json:"slot"`
+	Slot     *int    `json:"slot,omitempty"`
 	SlotType *string `json:"slotType,omitempty"`
 }
 
@@ -251,7 +251,7 @@ type AgentArticle struct {
 	Title       string  `json:"title"`
 	Subtitle    *string `json:"subtitle"`
 	Description *string `json:"description"`
-	Body        string  `json:"content"`
+	Body        *string `json:"content"`
 	Author      *string `json:"author"`
 	CreatedAt   string  `json:"createdAt"`
 	UpdatedAt   string  `json:"updatedAt"`

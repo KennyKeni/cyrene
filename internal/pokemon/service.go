@@ -342,6 +342,10 @@ func (s *Service) GetArticleBySlug(ctx context.Context, slug string) (*AgentArti
 		return nil, fmt.Errorf("fetch article: %w", err)
 	}
 
+	if string(data) == "null" {
+		return nil, nil
+	}
+
 	var article AgentArticle
 	if err := json.Unmarshal(data, &article); err != nil {
 		return nil, fmt.Errorf("decode article: %w", err)
