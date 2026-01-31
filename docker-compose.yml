@@ -1,6 +1,6 @@
 services:
   psql_cyrene:
-    image: postgres:latest
+    image: postgres:18
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_DATABASE}
