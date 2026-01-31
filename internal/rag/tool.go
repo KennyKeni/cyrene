@@ -81,7 +81,7 @@ func (s *service) registerTools(g *genkit.Genkit) {
 	s.searchMovesTool = s.defineSearchMovesTool(g)
 	s.searchAbilitiesTool = s.defineSearchAbilitiesTool(g)
 	s.searchItemsTool = s.defineSearchItemsTool(g)
-	s.searchArticlesTool = s.defineSearchArticlesTool(g)
+	s.listArticlesTool = s.defineListArticlesTool(g)
 	s.getArticleTool = s.defineGetArticleTool(g)
 	s.searchTool = s.defineVectorSearchTool(g)
 }
@@ -371,20 +371,20 @@ func (s *service) defineSearchItemsTool(g *genkit.Genkit) ai.Tool {
 	)
 }
 
-func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
+func (s *service) defineListArticlesTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
-		"searchArticles",
-		`Search articles by title or category. Returns article metadata. Use include flags to control response size. Use getArticle to fetch full article content by slug.`,
+		"listArticles",
+		`List articles by known title or category name. This is a structured lookup - NOT semantic search. Only use when you know the exact or approximate article title/category. For topic-based or conceptual queries (e.g., "how to breed", "best strategies"), use the "search" tool with types=["article"] instead.`,
 		func(ctx *ai.ToolContext, input struct {
-			Titles            []string `json:"titles,omitempty" jsonschema_description:"Fuzzy match article titles (e.g., ['breeding', 'ev training'])"`
+			Titles            []string `json:"titles,omitempty" jsonschema_description:"Exact or approximate article titles to match (e.g., ['Breeding Guide', 'EV Training']). NOT for topic/concept queries."`
 			Categories        []string `json:"categories,omitempty" jsonschema_description:"Filter by category names (e.g., ['guide', 'tutorial'])"`
 			IncludeContent    bool     `json:"includeContent,omitempty" jsonschema_description:"Include full article content."`
 			IncludeCategories bool     `json:"includeCategories,omitempty" jsonschema_description:"Include article categories."`
 			Limit             int      `json:"limit,omitempty" jsonschema_description:"Max results to return (default 5, max 100)"`
 			Offset            int      `json:"offset,omitempty" jsonschema_description:"Number of results to skip for pagination."`
 		}) (*ArticleSearchToolResponse, error) {
-			slog.Info("tool searchArticles", "titles", input.Titles, "categories", input.Categories, "limit", input.Limit, "offset", input.Offset)
+			slog.Info("tool listArticles", "titles", input.Titles, "categories", input.Categories, "limit", input.Limit, "offset", input.Offset)
 
 			limit := input.Limit
 			if limit <= 0 {
@@ -405,11 +405,11 @@ func (s *service) defineSearchArticlesTool(g *genkit.Genkit) ai.Tool {
 
 			resp, err := s.pokemon.SearchArticles(ctx, params)
 			if err != nil {
-				slog.Error("tool searchArticles failed", "error", err)
+				slog.Error("tool listArticles failed", "error", err)
 				return &ArticleSearchToolResponse{Error: err.Error()}, nil
 			}
 
-			slog.Info("tool searchArticles completed", "results", len(resp.Results), "total", resp.Total)
+			slog.Info("tool listArticles completed", "results", len(resp.Results), "total", resp.Total)
 			result := &ArticleSearchToolResponse{
 				Results: resp.Results,
 				Total:   resp.Total,
@@ -428,7 +428,7 @@ func (s *service) defineGetArticleTool(g *genkit.Genkit) ai.Tool {
 	return genkit.DefineTool(
 		g,
 		"getArticle",
-		`Fetch a specific article by its slug. Use this after searchArticles to get the full article content.`,
+		`Fetch a specific article by its slug. Use this after listArticles or search to get the full article content.`,
 		func(ctx *ai.ToolContext, input struct {
 			Slug string `json:"slug" jsonschema_description:"Article slug from search results (e.g., 'getting-started', 'breeding-guide')"`
 		}) (*ArticleToolResponse, error) {

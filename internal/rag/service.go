@@ -22,7 +22,7 @@ type service struct {
 	searchMovesTool     ai.Tool
 	searchAbilitiesTool ai.Tool
 	searchItemsTool     ai.Tool
-	searchArticlesTool  ai.Tool
+	listArticlesTool    ai.Tool
 	getArticleTool      ai.Tool
 	searchTool          ai.Tool
 }
@@ -97,7 +97,7 @@ func (s *service) Chat(ctx context.Context, prompt string, user string) (answer 
 	generateOpts := []ai.GenerateOption{
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
-		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.searchArticlesTool, s.getArticleTool, s.searchTool),
+		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.listArticlesTool, s.getArticleTool, s.searchTool),
 	}
 	if len(chatHistory) > 0 {
 		generateOpts = append(generateOpts, ai.WithMessages(chatHistory...))
@@ -157,7 +157,7 @@ func (s *service) ChatStream(ctx context.Context, prompt string, user string, on
 	generateOpts := []ai.GenerateOption{
 		ai.WithModel(s.clients.Model),
 		ai.WithSystem(systemPrompt),
-		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.searchArticlesTool, s.getArticleTool, s.searchTool),
+		ai.WithTools(s.searchPokemonTool, s.searchMovesTool, s.searchAbilitiesTool, s.searchItemsTool, s.listArticlesTool, s.getArticleTool, s.searchTool),
 		ai.WithStreaming(func(ctx context.Context, chunk *ai.ModelResponseChunk) error {
 			text := chunk.Text()
 			if text != "" {
